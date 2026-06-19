@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// ฉบับร่างเริ่มต้น (เฟส 1) — เปิดกว้างพอให้พัฒนาได้
+// จะเข้มขึ้นทีละเฟส: เฟส 2 ผูก meta/admin + role, เฟส 5 ผูก submissions/matches ละเอียดขึ้น
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // assign แอดมินคนแรกทำผ่าน Cloud Function (Admin SDK ข้าม rules) เท่านั้น
+    match /meta/{docId} {
+      allow read: if false;
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid) && request.resource.data.role == 'player';
+      allow update: if (isOwner(uid) && request.resource.data.role == resource.data.role) || isAdmin();
+      allow delete: if false;
+    }
+
+    match /leagues/{leagueId} {
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /byeBans/{uid} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    match /matches/{matchId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow delete: if false;
+    }
+  }
+}
