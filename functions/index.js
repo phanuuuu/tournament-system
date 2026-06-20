@@ -98,13 +98,13 @@ function matchWinner(match) {
   return penaltyHome > penaltyAway ? match.players.home : match.players.away;
 }
 
-// เมื่อแมตช์ถ้วยถูกอนุมัติ (ไม่ว่าจะอัตโนมัติหรือแอดมินตัดสิน) เช็คว่ารอบนี้ครบหมดยัง
+// เมื่อแมตช์ถ้วยถูกอนุมัติหรือได้ชนะบาย (ไม่ว่าจะครั้งแรกหรือแอดมินแก้ผลซ้ำหลังย้อนรอบ) เช็คว่ารอบนี้ครบหมดยัง
 // ถ้าครบ: สร้างรอบถัดไปจากผู้ชนะ (สายตายตัว) หรือถ้าเป็นรอบสุดท้ายก็ปิดลีค
+// เช็ค "รอบถัดไปมีอยู่แล้วหรือยัง" แทนการเช็ค before.status เพื่อให้แก้ผลซ้ำหลังย้อนรอบแล้ว trigger สร้างรอบใหม่ได้อีก
 exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) => {
-  const before = event.data.before.data();
   const after = event.data.after.data();
 
-  if (before.status === "approved" || after.status !== "approved" || after.kind !== "regular") {
+  if ((after.status !== "approved" && after.status !== "walkover") || after.kind !== "regular") {
     return;
   }
 
@@ -112,9 +112,10 @@ exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) =
   const leagueSnap = await leagueRef.get();
   if (!leagueSnap.exists) return;
   const league = leagueSnap.data();
-  if (league.format !== "cup" || league.status !== "ongoing" || after.round !== league.currentRound) {
+  if (league.format !== "cup" || after.round !== league.currentRound) {
     return;
   }
+  if (league.status !== "ongoing" && league.status !== "finished") return;
 
   const round = league.currentRound;
   const roundMatchesSnap = await db
@@ -133,9 +134,20 @@ exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) =
   );
 
   if (winners.length === 1) {
-    await leagueRef.update({ status: "finished", finishedAt: admin.firestore.FieldValue.serverTimestamp() });
+    if (league.status === "ongoing") {
+      await leagueRef.update({ status: "finished", finishedAt: admin.firestore.FieldValue.serverTimestamp() });
+    }
     return;
   }
+
+  // กันสร้างรอบถัดไปซ้ำ ถ้ามีอยู่แล้ว (เคย advance ไปแล้วในการรันครั้งก่อน)
+  const nextRoundSnap = await db
+    .collection("matches")
+    .where("leagueId", "==", after.leagueId)
+    .where("round", "==", round + 1)
+    .limit(1)
+    .get();
+  if (!nextRoundSnap.empty) return;
 
   const batch = db.batch();
   for (let i = 0; i < winners.length; i += 2) {
@@ -155,6 +167,7 @@ exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) =
       approvedResult: null,
       walkover: null,
       contactUnreachable: {},
+      hasContactIssue: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
   }

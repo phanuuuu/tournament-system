@@ -110,11 +110,22 @@ service cloud.firestore {
           && after.approvedResult.decidedBy == 'auto';
       }
 
+      // ปุ่ม "ติดต่อคู่แข่งไม่ได้" (เฉพาะถ้วย) — แก้ได้แค่ flag ของตัวเอง กดอีกครั้งยกเลิกได้
+      function isValidContactToggle() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return before.status != 'approved' && before.status != 'walkover'
+          && after.diff(before).affectedKeys().hasOnly(['contactUnreachable', 'hasContactIssue'])
+          && after.contactUnreachable.diff(before.contactUnreachable).affectedKeys().hasOnly([request.auth.uid]);
+      }
+
       allow read: if true;
       allow create: if isAdmin();
       // เฟส 9 ค่อยจำกัด resolve ข้อพิพาทของแอดมินให้ละเอียดขึ้น ตอนนี้แอดมินไว้ใจได้ (คนเดียวในระบบ)
-      allow update: if isAdmin() || (isParticipant() && (isValidSelfSubmission() || isValidAutoApprove()));
-      allow delete: if false;
+      allow update: if isAdmin()
+        || (isParticipant() && (isValidSelfSubmission() || isValidAutoApprove() || isValidContactToggle()));
+      // แอดมินลบได้เฉพาะตอนย้อนรอบล่าสุดของถ้วย (ลบเฉพาะรอบที่เพิ่งสร้างอัตโนมัติ ฝั่ง client เป็นคนคุมเงื่อนไขนี้)
+      allow delete: if isAdmin();
     }
 
     match /notifications/{notifId} {

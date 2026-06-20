@@ -5,8 +5,10 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
   orderBy,
   onSnapshot,
+  updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./config";
@@ -47,6 +49,7 @@ function baseMatchFields(leagueId, extra) {
     approvedResult: null,
     walkover: null,
     contactUnreachable: {},
+    hasContactIssue: false,
     createdAt: serverTimestamp(),
     ...extra,
   };
@@ -155,4 +158,81 @@ export async function createTiebreakerMatch(leagueId, uidA, uidB) {
       })
     )
     .commit();
+}
+
+// ปุ่ม "ติดต่อคู่แข่งไม่ได้" — กดอีกครั้งเพื่อยกเลิกได้ (เฉพาะถ้วย)
+export async function toggleContactUnreachable(matchId, uid) {
+  const matchRef = doc(db, "matches", matchId);
+  const snap = await getDoc(matchRef);
+  if (!snap.exists()) throw new Error("ไม่พบแมตช์นี้");
+  const match = snap.data();
+
+  const contactUnreachable = { ...match.contactUnreachable, [uid]: !match.contactUnreachable?.[uid] };
+  if (!contactUnreachable[uid]) delete contactUnreachable[uid];
+  const hasContactIssue = Object.values(contactUnreachable).some(Boolean);
+
+  await updateDoc(matchRef, { contactUnreachable, hasContactIssue });
+}
+
+export function subscribeToContactIssueMatches(callback) {
+  const q = query(collection(db, "matches"), where("hasContactIssue", "==", true));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+}
+
+// แอดมินยืนยันว่าฝ่ายที่กด "ติดต่อไม่ได้" ผ่านเข้ารอบแบบชนะบาย (ไม่ใช่สกอร์จริง)
+export async function grantWalkover(matchId, winnerUid) {
+  await updateDoc(doc(db, "matches", matchId), {
+    status: "walkover",
+    walkover: { winnerUid, reason: "contact_unreachable" },
+    contactUnreachable: {},
+    hasContactIssue: false,
+  });
+}
+
+// แอดมินยกเลิกคิวติดต่อไม่ได้ (ติดต่อได้ทั้งคู่แล้ว ให้แข่งต่อปกติ)
+export async function clearContactIssue(matchId) {
+  await updateDoc(doc(db, "matches", matchId), {
+    contactUnreachable: {},
+    hasContactIssue: false,
+  });
+}
+
+// ย้อนรอบล่าสุดของถ้วย — ลบคู่ในรอบที่ระบบสร้างอัตโนมัติล่าสุดทิ้ง แล้วปลดล็อกให้แก้ผลรอบก่อนหน้าได้ตรง ๆ
+// ทันทีที่แก้ผลรอบก่อนหน้าเสร็จ ระบบจะตรวจพบว่าครบแล้วและสร้างรอบถัดไปให้อัตโนมัติอีกครั้ง (onMatchApproved)
+export async function revertLatestRound(league) {
+  if (league.format !== "cup") throw new Error("ใช้ได้เฉพาะถ้วยเท่านั้น");
+  if (league.status !== "ongoing" || league.currentRound <= 1) {
+    throw new Error("ย้อนรอบล่าสุดไม่ได้ (ไม่มีรอบก่อนหน้าให้ย้อนกลับไป)");
+  }
+
+  const q = query(
+    collection(db, "matches"),
+    where("leagueId", "==", league.id),
+    where("round", "==", league.currentRound)
+  );
+  const snap = await getDocs(q);
+
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => batch.delete(d.ref));
+  batch.update(doc(db, "leagues", league.id), { currentRound: league.currentRound - 1 });
+  await batch.commit();
+}
+
+// แอดมินแก้ไขผลที่อนุมัติไปแล้วโดยตรง (ใช้คู่กับย้อนรอบล่าสุด หรือแก้ผลนัดชิงหลังลีคจบไปแล้ว)
+export async function adminOverrideResult(matchId, { scoreHome, scoreAway, penaltyHome, penaltyAway }) {
+  await updateDoc(doc(db, "matches", matchId), {
+    status: "approved",
+    approvedResult: {
+      scoreHome,
+      scoreAway,
+      penaltyHome: penaltyHome ?? null,
+      penaltyAway: penaltyAway ?? null,
+      decidedBy: "admin",
+      decidedAt: serverTimestamp(),
+      adminChoiceUid: null,
+      isReplay: false,
+    },
+  });
 }

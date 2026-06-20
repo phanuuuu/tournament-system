@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
 import { useAuth } from "../context/AuthContext";
-import { subscribeToMatch } from "../firebase/matches";
+import { subscribeToMatch, toggleContactUnreachable, adminOverrideResult } from "../firebase/matches";
 import { subscribeToLeague } from "../firebase/leagues";
 import { submitMatchResult } from "../firebase/matchSubmission";
 import { uploadMatchPhoto } from "../firebase/storageHelpers";
@@ -19,7 +19,7 @@ const STATUS_LABEL = {
 
 export default function MatchPage() {
   const { matchId } = useParams();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [match, setMatch] = useState(undefined);
   const [league, setLeague] = useState(undefined);
   const [myScore, setMyScore] = useState("");
@@ -32,6 +32,10 @@ export default function MatchPage() {
   const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [contactInfo, setContactInfo] = useState(null);
+  const [overrideHome, setOverrideHome] = useState("");
+  const [overrideAway, setOverrideAway] = useState("");
+  const [overridePenHome, setOverridePenHome] = useState("");
+  const [overridePenAway, setOverridePenAway] = useState("");
 
   useEffect(() => subscribeToMatch(matchId, setMatch), [matchId]);
   useEffect(() => {
@@ -86,6 +90,40 @@ export default function MatchPage() {
     }
   }
 
+  async function handleToggleUnreachable() {
+    setError("");
+    try {
+      await toggleContactUnreachable(matchId, user.uid);
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleAdminOverride(e) {
+    e.preventDefault();
+    setError("");
+    const sH = Number(overrideHome);
+    const sA = Number(overrideAway);
+    if (!Number.isInteger(sH) || sH < 0 || !Number.isInteger(sA) || sA < 0) {
+      return setError("สกอร์ต้องเป็นจำนวนเต็มไม่ติดลบ");
+    }
+    let pH = null;
+    let pA = null;
+    if (sH === sA) {
+      pH = Number(overridePenHome);
+      pA = Number(overridePenAway);
+      if (!Number.isInteger(pH) || pH < 0 || !Number.isInteger(pA) || pA < 0) {
+        return setError("สกอร์เสมอ ต้องกรอกจุดโทษเป็นจำนวนเต็มไม่ติดลบ");
+      }
+      if (pH === pA) return setError("สกอร์จุดโทษห้ามเท่ากัน");
+    }
+    try {
+      await adminOverrideResult(matchId, { scoreHome: sH, scoreAway: sA, penaltyHome: pH, penaltyAway: pA });
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -135,7 +173,10 @@ export default function MatchPage() {
   const opponentName = profiles[opponentUid]?.displayName ?? "...";
   const mySubmission = match.submissions?.[user.uid];
   const opponentSubmission = opponentUid ? match.submissions?.[opponentUid] : null;
-  const editable = isParticipant && match.status !== "approved";
+  const editable = isParticipant && match.status !== "approved" && match.status !== "walkover";
+  const canUseContactButton = league?.format === "cup" && match.kind === "regular" && isParticipant;
+  const iAmUnreachableFlag = !!match.contactUnreachable?.[user.uid];
+  const isAdmin = profile?.role === "admin";
 
   return (
     <div className="page">
@@ -163,6 +204,14 @@ export default function MatchPage() {
           {contactInfo && !contactInfo.facebookUrl && (
             <p>ชื่อเฟซบุ๊กคู่แข่ง: {contactInfo.facebookName ?? "ไม่มีข้อมูล"}</p>
           )}
+          {canUseContactButton && match.status !== "walkover" && (
+            <>
+              <button type="button" onClick={handleToggleUnreachable}>
+                {iAmUnreachableFlag ? "ยกเลิกแจ้งติดต่อไม่ได้" : "ติดต่อคู่แข่งไม่ได้"}
+              </button>
+              {iAmUnreachableFlag && <p>แจ้งแอดมินแล้วว่าติดต่อคู่แข่งไม่ได้ รอแอดมินดำเนินการ</p>}
+            </>
+          )}
         </>
       )}
 
@@ -177,6 +226,8 @@ export default function MatchPage() {
           )}
         </p>
       )}
+
+      {match.status === "walkover" && <p>ชนะบาย: {profiles[match.walkover.winnerUid]?.displayName} (ไม่ใช่ผลแข่งจริง)</p>}
 
       {(match.status === "disputed" || match.status === "approved") && mySubmission && opponentSubmission && (
         <div>
@@ -236,6 +287,39 @@ export default function MatchPage() {
           <button type="submit" disabled={submitting}>
             {submitting ? "กำลังส่ง..." : mySubmission ? "แก้ไขผล" : "ส่งผล"}
           </button>
+        </form>
+      )}
+
+      {isAdmin && (match.status === "approved" || match.status === "walkover") && (
+        <form onSubmit={handleAdminOverride}>
+          <h2>แก้ไขผลโดยตรง (แอดมิน)</h2>
+          <label>
+            สกอร์ {profiles[match.players.home]?.displayName} (เหย้า)
+            <input type="number" min={0} value={overrideHome} onChange={(e) => setOverrideHome(e.target.value)} />
+          </label>
+          <label>
+            สกอร์ {profiles[match.players.away]?.displayName} (เยือน)
+            <input type="number" min={0} value={overrideAway} onChange={(e) => setOverrideAway(e.target.value)} />
+          </label>
+          <label>
+            จุดโทษเหย้า (กรอกถ้าสกอร์เสมอ)
+            <input
+              type="number"
+              min={0}
+              value={overridePenHome}
+              onChange={(e) => setOverridePenHome(e.target.value)}
+            />
+          </label>
+          <label>
+            จุดโทษเยือน (กรอกถ้าสกอร์เสมอ)
+            <input
+              type="number"
+              min={0}
+              value={overridePenAway}
+              onChange={(e) => setOverridePenAway(e.target.value)}
+            />
+          </label>
+          <button type="submit">บันทึกผล</button>
         </form>
       )}
     </div>
