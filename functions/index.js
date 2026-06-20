@@ -76,3 +76,88 @@ exports.getOpponentContact = onCall(async (request) => {
     facebookUrl: opponentSnap.data().facebookUrl ?? null,
   };
 });
+
+const MATCH_CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+async function generateUniqueMatchCode() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += MATCH_CODE_ALPHABET[Math.floor(Math.random() * MATCH_CODE_ALPHABET.length)];
+    }
+    const existing = await db.collection("matches").where("matchCode", "==", code).limit(1).get();
+    if (existing.empty) return code;
+  }
+  throw new Error("ไม่สามารถสร้างรหัสแมตช์ได้");
+}
+
+function matchWinner(match) {
+  const { scoreHome, scoreAway, penaltyHome, penaltyAway } = match.approvedResult;
+  if (scoreHome > scoreAway) return match.players.home;
+  if (scoreAway > scoreHome) return match.players.away;
+  return penaltyHome > penaltyAway ? match.players.home : match.players.away;
+}
+
+// เมื่อแมตช์ถ้วยถูกอนุมัติ (ไม่ว่าจะอัตโนมัติหรือแอดมินตัดสิน) เช็คว่ารอบนี้ครบหมดยัง
+// ถ้าครบ: สร้างรอบถัดไปจากผู้ชนะ (สายตายตัว) หรือถ้าเป็นรอบสุดท้ายก็ปิดลีค
+exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+
+  if (before.status === "approved" || after.status !== "approved" || after.kind !== "regular") {
+    return;
+  }
+
+  const leagueRef = db.doc(`leagues/${after.leagueId}`);
+  const leagueSnap = await leagueRef.get();
+  if (!leagueSnap.exists) return;
+  const league = leagueSnap.data();
+  if (league.format !== "cup" || league.status !== "ongoing" || after.round !== league.currentRound) {
+    return;
+  }
+
+  const round = league.currentRound;
+  const roundMatchesSnap = await db
+    .collection("matches")
+    .where("leagueId", "==", after.leagueId)
+    .where("round", "==", round)
+    .get();
+  const roundMatches = roundMatchesSnap.docs.map((d) => d.data());
+
+  const allDone = roundMatches.every((m) => m.status === "approved" || m.status === "walkover");
+  if (!allDone) return;
+
+  roundMatches.sort((a, b) => a.slot - b.slot);
+  const winners = roundMatches.map((m) =>
+    m.status === "walkover" ? m.walkover.winnerUid : matchWinner(m)
+  );
+
+  if (winners.length === 1) {
+    await leagueRef.update({ status: "finished", finishedAt: admin.firestore.FieldValue.serverTimestamp() });
+    return;
+  }
+
+  const batch = db.batch();
+  for (let i = 0; i < winners.length; i += 2) {
+    const matchCode = await generateUniqueMatchCode();
+    const ref = db.collection("matches").doc();
+    batch.set(ref, {
+      leagueId: after.leagueId,
+      kind: "regular",
+      round: round + 1,
+      slot: i / 2,
+      leg: null,
+      players: { home: winners[i], away: winners[i + 1] },
+      matchCode,
+      status: "scheduled",
+      submissions: {},
+      submissionHistory: [],
+      approvedResult: null,
+      walkover: null,
+      contactUnreachable: {},
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  }
+  batch.update(leagueRef, { currentRound: round + 1 });
+  await batch.commit();
+});

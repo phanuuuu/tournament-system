@@ -6,3 +6,9 @@ export async function uploadProfilePhoto(uid, file) {
   await uploadBytes(fileRef, file);
   return getDownloadURL(fileRef);
 }
+
+export async function uploadMatchPhoto(matchId, file) {
+  const fileRef = ref(storage, `matchPhotos/${matchId}/${Date.now()}-${file.name}`);
+  await uploadBytes(fileRef, file);
+  return getDownloadURL(fileRef);
+}

@@ -11,6 +11,7 @@ export default function AdminDashboardPage() {
       <p>แดชบอร์ดสรุป/คิวต้องจัดการแบบเต็มจะถูกพัฒนาในเฟส 9</p>
       <nav className="admin-nav">
         <Link to="/admin/leagues">จัดการลีค</Link>
+        <Link to="/admin/disputes">ข้อพิพาท</Link>
         <Link to="/profile">โปรไฟล์</Link>
       </nav>
     </div>

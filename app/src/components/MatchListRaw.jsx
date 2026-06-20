@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const STATUS_LABEL = {
   scheduled: "ยังไม่แข่ง",
   one_submitted: "ส่งผลแล้วฝ่ายเดียว",
@@ -17,9 +19,11 @@ export default function MatchListRaw({ matches, profiles }) {
       <ul>
         {matches.map((m) => (
           <li key={m.id}>
-            <code>{m.matchCode}</code> — {nameOf(m.players.home)} vs {nameOf(m.players.away)}
-            {m.round != null && <> (รอบ {m.round})</>}
-            {m.leg != null && <> (นัดที่ {m.leg})</>} — {STATUS_LABEL[m.status]}
+            <Link to={`/matches/${m.id}`}>
+              <code>{m.matchCode}</code> — {nameOf(m.players.home)} vs {nameOf(m.players.away)}
+              {m.round != null && <> (รอบ {m.round})</>}
+              {m.leg != null && <> (นัดที่ {m.leg})</>} — {STATUS_LABEL[m.status]}
+            </Link>
           </li>
         ))}
       </ul>

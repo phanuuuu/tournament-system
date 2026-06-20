@@ -120,3 +120,23 @@ export function subscribeToLeagueMatches(leagueId, callback) {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   });
 }
+
+export function subscribeToMatch(matchId, callback) {
+  return onSnapshot(doc(db, "matches", matchId), (snap) => {
+    if (!snap.exists() && snap.metadata.fromCache) return;
+    callback(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+  });
+}
+
+export function subscribeToDisputedMatches(callback) {
+  const q = query(collection(db, "matches"), where("status", "==", "disputed"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+}
+
+export async function findMatchByCode(code) {
+  const q = query(collection(db, "matches"), where("matchCode", "==", code.trim().toUpperCase()));
+  const snap = await getDocs(q);
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+}

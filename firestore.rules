@@ -75,10 +75,45 @@ service cloud.firestore {
     }
 
     match /matches/{matchId} {
+      function isParticipant() {
+        return isSignedIn() &&
+          (request.auth.uid == resource.data.players.home || request.auth.uid == resource.data.players.away);
+      }
+
+      // ส่งผลของตัวเอง (สร้าง/แก้ไข) ได้จนกว่าผลจะอนุมัติ แก้ field อื่นไม่ได้
+      function isValidSelfSubmission() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return before.status != 'approved'
+          && after.diff(before).affectedKeys().hasOnly(['submissions', 'status'])
+          && after.submissions.diff(before.submissions).affectedKeys().hasOnly([request.auth.uid]);
+      }
+
+      function submissionsMatch(a, b) {
+        return a.scoreHome == b.scoreHome && a.scoreAway == b.scoreAway
+          && a.get('penaltyHome', null) == b.get('penaltyHome', null)
+          && a.get('penaltyAway', null) == b.get('penaltyAway', null);
+      }
+
+      // ผู้เล่นกดส่งผลแล้วบังเอิญตรงกับคู่แข่ง -> client เขียนอนุมัติอัตโนมัติได้เลย
+      // (ต้องพิสูจน์ในตัว request ว่าสองฝั่งส่งตรงกันจริง ไม่ใช่เชื่อ client เปล่า ๆ)
+      function isValidAutoApprove() {
+        let before = resource.data;
+        let after = request.resource.data;
+        let home = before.players.home;
+        let away = before.players.away;
+        return before.status != 'approved'
+          && after.diff(before).affectedKeys().hasOnly(['submissions', 'status', 'approvedResult'])
+          && (home in after.submissions) && (away in after.submissions)
+          && submissionsMatch(after.submissions[home], after.submissions[away])
+          && after.status == 'approved'
+          && after.approvedResult.decidedBy == 'auto';
+      }
+
       allow read: if true;
       allow create: if isAdmin();
-      // เฟส 5 จะจำกัด update ให้เฉพาะคู่แข่งในแมตช์/แอดมินเท่าที่จำเป็น
-      allow update: if isSignedIn();
+      // เฟส 9 ค่อยจำกัด resolve ข้อพิพาทของแอดมินให้ละเอียดขึ้น ตอนนี้แอดมินไว้ใจได้ (คนเดียวในระบบ)
+      allow update: if isAdmin() || (isParticipant() && (isValidSelfSubmission() || isValidAutoApprove()));
       allow delete: if false;
     }
 

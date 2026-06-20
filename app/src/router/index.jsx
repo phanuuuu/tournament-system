@@ -12,6 +12,8 @@ import AdminCreateLeaguePage from "../pages/AdminCreateLeaguePage";
 import AdminLeagueDetailPage from "../pages/AdminLeagueDetailPage";
 import LeagueListPage from "../pages/LeagueListPage";
 import LeaguePublicDetailPage from "../pages/LeaguePublicDetailPage";
+import MatchPage from "../pages/MatchPage";
+import AdminDisputesPage from "../pages/AdminDisputesPage";
 import NotFoundPage from "../pages/NotFoundPage";
 
 function RootPage() {
@@ -34,11 +36,13 @@ export default function AppRouter() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/leagues" element={<LeagueListPage />} />
           <Route path="/leagues/:leagueId" element={<LeaguePublicDetailPage />} />
+          <Route path="/matches/:matchId" element={<MatchPage />} />
 
           <Route element={<AdminRoute />}>
             <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
             <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
             <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
+            <Route path="/admin/disputes" element={<AdminDisputesPage />} />
           </Route>
         </Route>
 
