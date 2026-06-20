@@ -84,47 +84,55 @@ export default function AdminDisputesPage() {
   return (
     <div className="page">
       <Link to="/admin/leagues">← จัดการลีค</Link>
-      <h1>ข้อพิพาท (สกอร์ไม่ตรง)</h1>
+      <h1>ข้อพิพาทและคำขอ</h1>
 
-      <form onSubmit={handleSearch}>
+      <form onSubmit={handleSearch} className="inline-search-form">
         <label>
           ค้นหาแมตช์ด้วยรหัส
-          <input value={searchCode} onChange={(e) => setSearchCode(e.target.value)} />
+          <input value={searchCode} onChange={(e) => setSearchCode(e.target.value)} placeholder="เช่น 7K4PXM" />
         </label>
         {searchError && <p className="form-error">{searchError}</p>}
-        <button type="submit">ค้นหา</button>
+        <button type="submit" className="btn-ghost">
+          ค้นหา
+        </button>
       </form>
 
       {error && <p className="form-error">{error}</p>}
+
+      <h2>ข้อพิพาท (สกอร์ไม่ตรง)</h2>
       {matches === null && <p>กำลังโหลด...</p>}
       {matches?.length === 0 && <p>ไม่มีข้อพิพาทตอนนี้</p>}
 
-      <ul className="league-list">
+      <ul className="dispute-list">
         {matches?.map((m) => {
           const home = m.submissions[m.players.home];
           const away = m.submissions[m.players.away];
           return (
-            <li key={m.id} style={{ flexDirection: "column", alignItems: "flex-start" }}>
-              <p>
-                <code>{m.matchCode}</code> — <Link to={`/matches/${m.id}`}>ดูหน้าแมตช์</Link>
+            <li key={m.id} className="dispute-card">
+              <p className="dispute-card-header">
+                <code>{m.matchCode}</code> <Link to={`/matches/${m.id}`}>ดูหน้าแมตช์</Link>
               </p>
-              <p>
-                {profiles[m.players.home]?.displayName}: {home.scoreHome}-{home.scoreAway}
-                {home.penaltyHome != null && <> (จุดโทษ {home.penaltyHome}-{home.penaltyAway})</>}{" "}
-                {home.photoURL ? "📷 มีรูป" : "ไม่มีรูป"}
-                <button type="button" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.home)}>
+              <div className="dispute-row">
+                <span>
+                  {profiles[m.players.home]?.displayName}: <strong>{home.scoreHome}-{home.scoreAway}</strong>
+                  {home.penaltyHome != null && <> (จุดโทษ {home.penaltyHome}-{home.penaltyAway})</>}{" "}
+                  {home.photoURL ? "📷" : ""}
+                </span>
+                <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.home)}>
                   ใช้ผลนี้
                 </button>
-              </p>
-              <p>
-                {profiles[m.players.away]?.displayName}: {away.scoreHome}-{away.scoreAway}
-                {away.penaltyHome != null && <> (จุดโทษ {away.penaltyHome}-{away.penaltyAway})</>}{" "}
-                {away.photoURL ? "📷 มีรูป" : "ไม่มีรูป"}
-                <button type="button" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.away)}>
+              </div>
+              <div className="dispute-row">
+                <span>
+                  {profiles[m.players.away]?.displayName}: <strong>{away.scoreHome}-{away.scoreAway}</strong>
+                  {away.penaltyHome != null && <> (จุดโทษ {away.penaltyHome}-{away.penaltyAway})</>}{" "}
+                  {away.photoURL ? "📷" : ""}
+                </span>
+                <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.away)}>
                   ใช้ผลนี้
                 </button>
-              </p>
-              <button type="button" disabled={busyId === m.id} onClick={() => handleReplay(m.id)}>
+              </div>
+              <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleReplay(m.id)}>
                 ให้แข่งใหม่
               </button>
             </li>
@@ -132,30 +140,34 @@ export default function AdminDisputesPage() {
         })}
       </ul>
 
-      <h1>ติดต่อคู่แข่งไม่ได้ (ถ้วย)</h1>
+      <h2>ติดต่อคู่แข่งไม่ได้ (ถ้วย)</h2>
       {contactIssues === null && <p>กำลังโหลด...</p>}
       {contactIssues?.length === 0 && <p>ไม่มีคิวตอนนี้</p>}
-      <ul className="league-list">
+      <ul className="dispute-list">
         {contactIssues?.map((m) => (
-          <li key={m.id} style={{ flexDirection: "column", alignItems: "flex-start" }}>
-            <p>
-              <code>{m.matchCode}</code> — <Link to={`/matches/${m.id}`}>ดูหน้าแมตช์</Link>
+          <li key={m.id} className="dispute-card">
+            <p className="dispute-card-header">
+              <code>{m.matchCode}</code> <Link to={`/matches/${m.id}`}>ดูหน้าแมตช์</Link>
             </p>
-            <p>
-              {profiles[m.players.home]?.displayName}
-              {m.contactUnreachable?.[m.players.home] && " (กดติดต่อไม่ได้)"}
-              <button type="button" disabled={busyId === m.id} onClick={() => handleGrantWalkover(m.id, m.players.home)}>
+            <div className="dispute-row">
+              <span>
+                {profiles[m.players.home]?.displayName}
+                {m.contactUnreachable?.[m.players.home] && <span className="status-badge status-orange"> กดติดต่อไม่ได้</span>}
+              </span>
+              <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleGrantWalkover(m.id, m.players.home)}>
                 ให้ผ่านแบบชนะบาย
               </button>
-            </p>
-            <p>
-              {profiles[m.players.away]?.displayName}
-              {m.contactUnreachable?.[m.players.away] && " (กดติดต่อไม่ได้)"}
-              <button type="button" disabled={busyId === m.id} onClick={() => handleGrantWalkover(m.id, m.players.away)}>
+            </div>
+            <div className="dispute-row">
+              <span>
+                {profiles[m.players.away]?.displayName}
+                {m.contactUnreachable?.[m.players.away] && <span className="status-badge status-orange"> กดติดต่อไม่ได้</span>}
+              </span>
+              <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleGrantWalkover(m.id, m.players.away)}>
                 ให้ผ่านแบบชนะบาย
               </button>
-            </p>
-            <button type="button" disabled={busyId === m.id} onClick={() => handleClearContactIssue(m.id)}>
+            </div>
+            <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleClearContactIssue(m.id)}>
               ยกเลิกคิวนี้ (ติดต่อได้แล้ว แข่งปกติ)
             </button>
           </li>

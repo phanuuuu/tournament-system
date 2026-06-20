@@ -10,12 +10,20 @@ import {
   onSnapshot,
   orderBy,
   query,
+  where,
 } from "firebase/firestore";
 import { db } from "./config";
 import { generateCupRound1, generatePointsSchedule } from "./matches";
 
 export function subscribeToLeagues(callback) {
   const q = query(collection(db, "leagues"), orderBy("createdAt", "desc"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+}
+
+export function subscribeToMyLeagues(uid, callback) {
+  const q = query(collection(db, "leagues"), where("playerIds", "array-contains", uid));
   return onSnapshot(q, (snap) => {
     callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   });

@@ -33,9 +33,8 @@ export default function AppRouter() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/complete-profile" element={<CompleteProfilePage />} />
-
           <Route element={<AppLayout />}>
+            <Route path="/complete-profile" element={<CompleteProfilePage />} />
             <Route path="/" element={<RootPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/leagues" element={<LeagueListPage />} />

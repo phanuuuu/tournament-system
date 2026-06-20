@@ -74,18 +74,22 @@ export default function LeagueListPage() {
 
           return (
             <li key={league.id}>
-              <Link to={`/leagues/${league.id}`}>
-                {league.name} — {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) —{" "}
-                {league.playerIds.length}/{league.size}
+              <Link to={`/leagues/${league.id}`} className="league-card-info">
+                <span className="league-card-title">{league.name}</span>
+                <span className="league-card-meta">
+                  {FORMAT_LABEL[league.format]} · {MATCH_TYPE_LABEL[league.matchType]} · {league.playerIds.length}/
+                  {league.size} คน
+                </span>
               </Link>
 
               {tab === "open" && profile?.role !== "admin" && (
                 <button
                   type="button"
+                  className={joined ? "btn-ghost btn-sm" : "btn-primary btn-sm"}
                   disabled={busyId === league.id || (full && !joined)}
                   onClick={() => (joined ? handleLeave(league) : handleJoin(league))}
                 >
-                  {joined ? "เข้าร่วมแล้ว (กดเพื่อออก)" : full ? "เต็มแล้ว" : "เข้าร่วม"}
+                  {joined ? "เข้าร่วมแล้ว (ออก)" : full ? "เต็มแล้ว" : "เข้าร่วม"}
                 </button>
               )}
             </li>

@@ -8,14 +8,7 @@ import { submitMatchResult } from "../firebase/matchSubmission";
 import { uploadMatchPhoto } from "../firebase/storageHelpers";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { functions } from "../firebase/config";
-
-const STATUS_LABEL = {
-  scheduled: "ยังไม่แข่ง",
-  one_submitted: "ส่งผลแล้วฝ่ายเดียว รออีกฝ่าย",
-  disputed: "สกอร์ไม่ตรง รอแอดมินตัดสิน",
-  approved: "จบแล้ว",
-  walkover: "ชนะบาย",
-};
+import StatusBadge from "../components/StatusBadge";
 
 export default function MatchPage() {
   const { matchId } = useParams();
@@ -181,56 +174,57 @@ export default function MatchPage() {
   return (
     <div className="page">
       <Link to={`/leagues/${match.leagueId}`}>← กลับลีค</Link>
-      <h1>แมตช์</h1>
 
-      <p>
-        รหัสแมตช์: <code>{match.matchCode}</code>{" "}
-        <button type="button" onClick={handleCopyCode}>
-          {copied ? "คัดลอกแล้ว" : "คัดลอก"}
-        </button>
-      </p>
-      <p>
-        ลีค: {league?.name}
-        {match.round != null && <> — รอบ {match.round}</>}
-        {match.leg != null && <> — นัดที่ {match.leg}</>}
-      </p>
+      <div className="match-header">
+        <div className="match-header-top">
+          <code>{match.matchCode}</code>
+          <button type="button" className="btn-ghost btn-sm" onClick={handleCopyCode}>
+            {copied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}
+          </button>
+          <StatusBadge status={match.status} />
+        </div>
+        <p>
+          {league?.name}
+          {match.round != null && <> · รอบ {match.round}</>}
+          {match.leg != null && <> · นัดที่ {match.leg}</>}
+        </p>
+        {isParticipant && <p>คู่แข่ง: {opponentName}</p>}
+      </div>
 
       {isParticipant && (
-        <>
-          <p>คู่แข่ง: {opponentName}</p>
-          <button type="button" onClick={handleContactOpponent}>
+        <div className="match-actions">
+          <button type="button" className="btn-ghost btn-sm" onClick={handleContactOpponent}>
             ติดต่อคู่แข่ง
           </button>
-          {contactInfo && !contactInfo.facebookUrl && (
-            <p>ชื่อเฟซบุ๊กคู่แข่ง: {contactInfo.facebookName ?? "ไม่มีข้อมูล"}</p>
-          )}
           {canUseContactButton && match.status !== "walkover" && (
-            <>
-              <button type="button" onClick={handleToggleUnreachable}>
-                {iAmUnreachableFlag ? "ยกเลิกแจ้งติดต่อไม่ได้" : "ติดต่อคู่แข่งไม่ได้"}
-              </button>
-              {iAmUnreachableFlag && <p>แจ้งแอดมินแล้วว่าติดต่อคู่แข่งไม่ได้ รอแอดมินดำเนินการ</p>}
-            </>
+            <button type="button" className="btn-ghost btn-sm" onClick={handleToggleUnreachable}>
+              {iAmUnreachableFlag ? "ยกเลิกแจ้งติดต่อไม่ได้" : "ติดต่อคู่แข่งไม่ได้"}
+            </button>
           )}
-        </>
+        </div>
       )}
+      {contactInfo && !contactInfo.facebookUrl && <p>ชื่อเฟซบุ๊กคู่แข่ง: {contactInfo.facebookName ?? "ไม่มีข้อมูล"}</p>}
+      {iAmUnreachableFlag && <p>แจ้งแอดมินแล้วว่าติดต่อคู่แข่งไม่ได้ รอแอดมินดำเนินการ</p>}
 
-      <p>สถานะ: {STATUS_LABEL[match.status]}</p>
       {error && <p className="form-error">{error}</p>}
 
       {match.status === "approved" && (
-        <p>
+        <div className="match-result-banner status-green">
           ผลอนุมัติแล้ว: {match.approvedResult.scoreHome} - {match.approvedResult.scoreAway}
           {match.approvedResult.penaltyHome != null && (
             <> (จุดโทษ {match.approvedResult.penaltyHome}-{match.approvedResult.penaltyAway})</>
           )}
-        </p>
+        </div>
       )}
 
-      {match.status === "walkover" && <p>ชนะบาย: {profiles[match.walkover.winnerUid]?.displayName} (ไม่ใช่ผลแข่งจริง)</p>}
+      {match.status === "walkover" && (
+        <div className="match-result-banner status-green">
+          ชนะบาย: {profiles[match.walkover.winnerUid]?.displayName} (ไม่ใช่ผลแข่งจริง)
+        </div>
+      )}
 
       {(match.status === "disputed" || match.status === "approved") && mySubmission && opponentSubmission && (
-        <div>
+        <div className="submission-compare">
           <p>
             ผลที่ {profiles[match.players.home]?.displayName} ส่ง: {match.submissions[match.players.home].scoreHome}-
             {match.submissions[match.players.home].scoreAway}
@@ -244,6 +238,7 @@ export default function MatchPage() {
 
       {editable && (
         <form onSubmit={handleSubmit}>
+          <h2>ส่งผล</h2>
           <label>
             สกอร์ของฉัน
             <input type="number" min={0} value={myScore} onChange={(e) => setMyScore(e.target.value)} required />
@@ -255,7 +250,7 @@ export default function MatchPage() {
 
           {needsPenalty && isTied && (
             <>
-              <label>
+              <label className="checkbox-label">
                 <input type="checkbox" checked={usePenalty} onChange={(e) => setUsePenalty(e.target.checked)} />
                 เข้าสู่การยิงจุดโทษ
               </label>
@@ -279,10 +274,10 @@ export default function MatchPage() {
             <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
           </label>
 
-          {!mySubmission && opponentSubmission && <p>คู่แข่งส่งผลแล้ว รอคุณยืนยัน</p>}
-          {mySubmission && !opponentSubmission && <p>ส่งผลแล้ว รอคู่แข่งยืนยัน</p>}
+          {!mySubmission && opponentSubmission && <p className="hint-text">คู่แข่งส่งผลแล้ว รอคุณยืนยัน</p>}
+          {mySubmission && !opponentSubmission && <p className="hint-text">ส่งผลแล้ว รอคู่แข่งยืนยัน</p>}
 
-          <p>แก้ไขได้จนกว่าผลจะถูกอนุมัติ</p>
+          <p className="hint-text">แก้ไขได้จนกว่าผลจะถูกอนุมัติ</p>
 
           <button type="submit" disabled={submitting}>
             {submitting ? "กำลังส่ง..." : mySubmission ? "แก้ไขผล" : "ส่งผล"}
@@ -319,7 +314,9 @@ export default function MatchPage() {
               onChange={(e) => setOverridePenAway(e.target.value)}
             />
           </label>
-          <button type="submit">บันทึกผล</button>
+          <button type="submit" className="btn-ghost">
+            บันทึกผล
+          </button>
         </form>
       )}
     </div>

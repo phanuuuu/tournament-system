@@ -80,14 +80,18 @@ export default function ProfilePage() {
     <div className="auth-page">
       <h1>โปรไฟล์ของฉัน</h1>
       <form onSubmit={handleSubmit}>
-        {photoURL && <img src={photoURL} alt="รูปโปรไฟล์" width={96} height={96} className="profile-photo-preview" />}
-        <label>
-          เปลี่ยนรูปโปรไฟล์
-          <input type="file" accept="image/*" onChange={handlePhotoChange} />
-        </label>
-        <button type="button" onClick={handleResetToRandomAvatar}>
-          สุ่มไอคอนใหม่
-        </button>
+        <div className="avatar-edit-row">
+          {photoURL && <img src={photoURL} alt="รูปโปรไฟล์" width={88} height={88} className="profile-photo-preview" />}
+          <div className="avatar-edit-controls">
+            <label>
+              เปลี่ยนรูปโปรไฟล์
+              <input type="file" accept="image/*" onChange={handlePhotoChange} />
+            </label>
+            <button type="button" className="btn-ghost btn-sm" onClick={handleResetToRandomAvatar}>
+              สุ่มไอคอนใหม่
+            </button>
+          </div>
+        </div>
 
         <label>
           ชื่อที่ใช้แสดง *

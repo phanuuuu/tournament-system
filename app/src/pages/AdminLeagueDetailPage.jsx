@@ -102,7 +102,10 @@ export default function AdminLeagueDetailPage() {
       <Link to="/admin/leagues">← ลีคทั้งหมด</Link>
       <h1>{league.name}</h1>
       <p>
-        {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) — {STATUS_LABEL[league.status]}
+        {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) ·{" "}
+        <span className={`status-badge status-${{ open: "yellow", ongoing: "green", finished: "gray" }[league.status]}`}>
+          {STATUS_LABEL[league.status]}
+        </span>
       </p>
       <p>
         ผู้เล่น: {league.playerIds.length}/{league.size}
@@ -110,28 +113,32 @@ export default function AdminLeagueDetailPage() {
 
       {error && <p className="form-error">{error}</p>}
 
-      <ul>
+      <ul className="league-list">
         {league.playerIds.map((uid) => (
           <li key={uid}>
-            {profiles[uid]?.displayName ?? "กำลังโหลด..."}
-            {byeBans[uid]?.active && " (แพ้บาย)"}
-            {league.status === "open" && (
-              <button type="button" disabled={busy} onClick={() => handleKick(uid)}>
-                เตะออก
-              </button>
-            )}
-            {league.format === "points" && league.status === "ongoing" && (
-              <button type="button" disabled={busy} onClick={() => handleToggleBan(uid)}>
-                {byeBans[uid]?.active ? "เลิกแพ้บาย" : "แพ้บาย"}
-              </button>
-            )}
+            <span>
+              {profiles[uid]?.displayName ?? "กำลังโหลด..."}
+              {byeBans[uid]?.active && <span className="status-badge status-orange"> แพ้บาย</span>}
+            </span>
+            <span className="row-actions">
+              {league.status === "open" && (
+                <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleKick(uid)}>
+                  เตะออก
+                </button>
+              )}
+              {league.format === "points" && league.status === "ongoing" && (
+                <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleToggleBan(uid)}>
+                  {byeBans[uid]?.active ? "เลิกแพ้บาย" : "แพ้บาย"}
+                </button>
+              )}
+            </span>
           </li>
         ))}
       </ul>
 
       <div className="admin-actions">
         {league.status === "open" && (
-          <button type="button" disabled={busy || !canStartLeague(league)} onClick={handleStart}>
+          <button type="button" className="btn-primary" disabled={busy || !canStartLeague(league)} onClick={handleStart}>
             เริ่มลีค
           </button>
         )}
@@ -143,12 +150,12 @@ export default function AdminLeagueDetailPage() {
           </p>
         )}
         {league.format === "cup" && league.status === "ongoing" && league.currentRound > 1 && (
-          <button type="button" disabled={busy} onClick={handleRevert}>
+          <button type="button" className="btn-ghost" disabled={busy} onClick={handleRevert}>
             ย้อนรอบล่าสุด
           </button>
         )}
         {canDeleteLeague(league) && (
-          <button type="button" disabled={busy} onClick={handleDelete}>
+          <button type="button" className="btn-danger" disabled={busy} onClick={handleDelete}>
             ลบลีค
           </button>
         )}

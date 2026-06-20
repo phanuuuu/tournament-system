@@ -10,6 +10,7 @@ import LeagueResultsView from "../components/LeagueResultsView";
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
 const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "กำลังแข่ง", finished: "จบแล้ว" };
+const STATUS_COLOR = { open: "yellow", ongoing: "green", finished: "gray" };
 
 export default function LeaguePublicDetailPage() {
   const { leagueId } = useParams();
@@ -31,13 +32,14 @@ export default function LeaguePublicDetailPage() {
       <Link to="/leagues">← ลีคทั้งหมด</Link>
       <h1>{league.name}</h1>
       <p>
-        {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) — {STATUS_LABEL[league.status]}
+        {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) ·{" "}
+        <span className={`status-badge status-${STATUS_COLOR[league.status]}`}>{STATUS_LABEL[league.status]}</span>
       </p>
       <p>
         ผู้เล่น: {league.playerIds.length}/{league.size}
       </p>
 
-      <ul>
+      <ul className="player-chip-list">
         {league.playerIds.map((uid) => (
           <li key={uid}>{profiles[uid]?.displayName ?? "กำลังโหลด..."}</li>
         ))}

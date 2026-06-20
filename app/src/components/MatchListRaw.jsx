@@ -1,12 +1,5 @@
 import { Link } from "react-router-dom";
-
-const STATUS_LABEL = {
-  scheduled: "ยังไม่แข่ง",
-  one_submitted: "ส่งผลแล้วฝ่ายเดียว",
-  disputed: "สกอร์ไม่ตรง รอแอดมิน",
-  approved: "จบแล้ว",
-  walkover: "ชนะบาย",
-};
+import StatusBadge from "./StatusBadge";
 
 export default function MatchListRaw({ matches, profiles }) {
   function nameOf(uid) {
@@ -20,9 +13,12 @@ export default function MatchListRaw({ matches, profiles }) {
         {matches.map((m) => (
           <li key={m.id}>
             <Link to={`/matches/${m.id}`}>
-              <code>{m.matchCode}</code> — {nameOf(m.players.home)} vs {nameOf(m.players.away)}
-              {m.round != null && <> (รอบ {m.round})</>}
-              {m.leg != null && <> (นัดที่ {m.leg})</>} — {STATUS_LABEL[m.status]}
+              <span>
+                <code>{m.matchCode}</code> — {nameOf(m.players.home)} vs {nameOf(m.players.away)}
+                {m.round != null && <> (รอบ {m.round})</>}
+                {m.leg != null && <> (นัดที่ {m.leg})</>}
+              </span>
+              <StatusBadge status={m.status} />
             </Link>
           </li>
         ))}
