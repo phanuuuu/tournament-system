@@ -181,6 +181,14 @@ export function subscribeToContactIssueMatches(callback) {
   });
 }
 
+// แมตช์ค้าง — ยังไม่มีใครส่งผลเลย (ข้อมูลประกอบการตัดสินใจของแอดมิน ไม่ใช่ของที่ต้องลงมือ)
+export function subscribeToScheduledMatches(callback) {
+  const q = query(collection(db, "matches"), where("status", "==", "scheduled"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+}
+
 // แอดมินยืนยันว่าฝ่ายที่กด "ติดต่อไม่ได้" ผ่านเข้ารอบแบบชนะบาย (ไม่ใช่สกอร์จริง)
 export async function grantWalkover(matchId, winnerUid) {
   await updateDoc(doc(db, "matches", matchId), {

@@ -179,6 +179,42 @@ button[type="submit"] {
   color: #92400e;
 }
 
+.dashboard-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  text-decoration: none;
+  color: inherit;
+  font-weight: bold;
+}
+
+.dashboard-number {
+  font-size: 22px;
+}
+
+.dashboard-number-alert {
+  font-size: 22px;
+  color: #dc2626;
+}
+
+.dashboard-subitems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0 16px;
+  font-size: 14px;
+}
+
+.dashboard-breakdown {
+  font-size: 13px;
+  color: #666;
+  margin: 4px 0 0 16px;
+}
+
 .app-header {
   display: flex;
   justify-content: space-between;

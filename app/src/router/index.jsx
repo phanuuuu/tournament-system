@@ -14,6 +14,7 @@ import LeagueListPage from "../pages/LeagueListPage";
 import LeaguePublicDetailPage from "../pages/LeaguePublicDetailPage";
 import MatchPage from "../pages/MatchPage";
 import AdminDisputesPage from "../pages/AdminDisputesPage";
+import AdminStaleMatchesPage from "../pages/AdminStaleMatchesPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import AppLayout from "../components/AppLayout";
 
@@ -46,6 +47,7 @@ export default function AppRouter() {
               <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
               <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
               <Route path="/admin/disputes" element={<AdminDisputesPage />} />
+              <Route path="/admin/stale-matches" element={<AdminStaleMatchesPage />} />
             </Route>
           </Route>
         </Route>
