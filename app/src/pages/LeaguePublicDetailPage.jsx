@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { subscribeToLeague } from "../firebase/leagues";
-import { subscribeToLeagueMatches } from "../firebase/matches";
+import { subscribeToLeagueMatches, createTiebreakerMatch } from "../firebase/matches";
+import { subscribeToByeBans } from "../firebase/byeBans";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
-import MatchListRaw from "../components/MatchListRaw";
+import { useAuth } from "../context/AuthContext";
+import LeagueResultsView from "../components/LeagueResultsView";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
@@ -11,18 +13,21 @@ const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "�
 
 export default function LeaguePublicDetailPage() {
   const { leagueId } = useParams();
+  const { profile } = useAuth();
   const [league, setLeague] = useState(undefined);
   const [matches, setMatches] = useState([]);
+  const [byeBans, setByeBans] = useState({});
   const profiles = usePublicProfiles(league?.playerIds);
 
   useEffect(() => subscribeToLeague(leagueId, setLeague), [leagueId]);
   useEffect(() => subscribeToLeagueMatches(leagueId, setMatches), [leagueId]);
+  useEffect(() => subscribeToByeBans(leagueId, setByeBans), [leagueId]);
 
   if (league === undefined) return <p>กำลังโหลด...</p>;
   if (league === null) return <p>ไม่พบลีคนี้</p>;
 
   return (
-    <div className="page">
+    <div className="page-wide">
       <Link to="/leagues">← ลีคทั้งหมด</Link>
       <h1>{league.name}</h1>
       <p>
@@ -38,7 +43,14 @@ export default function LeaguePublicDetailPage() {
         ))}
       </ul>
 
-      {matches.length > 0 && <MatchListRaw matches={matches} profiles={profiles} />}
+      <LeagueResultsView
+        league={league}
+        matches={matches}
+        profiles={profiles}
+        byeBans={byeBans}
+        isAdmin={profile?.role === "admin"}
+        onCreateTiebreaker={(a, b) => createTiebreakerMatch(leagueId, a, b)}
+      />
     </div>
   );
 }

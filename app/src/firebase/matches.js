@@ -140,3 +140,19 @@ export async function findMatchByCode(code) {
   const snap = await getDocs(q);
   return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
+
+// แมตช์ตัดสินอันดับลีคเก็บแต้มตอนเท่ากันเป๊ะทุกตัวตัดสิน — ใช้กติกาถ้วย (เสมอ → จุดโทษ)
+// ไม่มีผลต่อ ได้/เสีย/แต้มในตารางหลัก ใช้แค่จัดลำดับคู่นี้เท่านั้น
+export async function createTiebreakerMatch(leagueId, uidA, uidB) {
+  const matchCode = await generateUniqueMatchCode();
+  await writeBatch(db)
+    .set(
+      doc(collection(db, "matches")),
+      baseMatchFields(leagueId, {
+        kind: "tiebreaker",
+        players: { home: uidA, away: uidB },
+        matchCode,
+      })
+    )
+    .commit();
+}
