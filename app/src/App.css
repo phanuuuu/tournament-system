@@ -178,3 +178,69 @@ button[type="submit"] {
   font-size: 12px;
   color: #92400e;
 }
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.notification-bell {
+  position: relative;
+}
+
+.notification-bell > button {
+  position: relative;
+  background: none;
+  padding: 6px;
+  font-size: 22px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc2626;
+  color: white;
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 1px 5px;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  width: 280px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+  z-index: 10;
+}
+
+.notification-dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-dropdown li button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  font-size: 13px;
+  padding: 8px;
+}
+
+.notification-dropdown li.notification-unread button {
+  background: #eff6ff;
+  font-weight: bold;
+}

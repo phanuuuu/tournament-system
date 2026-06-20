@@ -174,3 +174,74 @@ exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) =
   batch.update(leagueRef, { currentRound: round + 1 });
   await batch.commit();
 });
+
+async function getAdminUid() {
+  const metaSnap = await db.doc("meta/admin").get();
+  return metaSnap.exists ? metaSnap.data().uid : null;
+}
+
+async function notify(userId, type, { leagueId = null, matchId = null } = {}) {
+  if (!userId) return;
+  await db.collection("notifications").add({
+    userId,
+    type,
+    leagueId,
+    matchId,
+    read: false,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+}
+
+// แมตช์ใหม่ที่เกิดจากการ "เข้ารอบ" (round > 1) เท่านั้น — รอบแรกของลีคไม่ถือเป็นการเข้ารอบ
+exports.onMatchCreatedNotify = onDocumentCreated("matches/{matchId}", async (event) => {
+  const match = event.data.data();
+  if (match.kind !== "regular" || !match.round || match.round <= 1) return;
+
+  await Promise.all([
+    notify(match.players.home, "advanced_round", { leagueId: match.leagueId, matchId: event.params.matchId }),
+    notify(match.players.away, "advanced_round", { leagueId: match.leagueId, matchId: event.params.matchId }),
+  ]);
+});
+
+// แจ้งเตือนตามการเปลี่ยนสถานะแมตช์: ผลรอยืนยัน / อนุมัติแล้ว / ข้อพิพาท / แข่งใหม่
+exports.onMatchUpdatedNotify = onDocumentUpdated("matches/{matchId}", async (event) => {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  const matchId = event.params.matchId;
+  const { leagueId, players } = after;
+
+  if (before.status !== "one_submitted" && after.status === "one_submitted") {
+    const submittedUid = Object.keys(after.submissions)[0];
+    const waitingUid = submittedUid === players.home ? players.away : players.home;
+    await notify(waitingUid, "opponent_submitted", { leagueId, matchId });
+  }
+
+  const wasFinal = before.status === "approved" || before.status === "walkover";
+  const isFinal = after.status === "approved" || after.status === "walkover";
+  if (!wasFinal && isFinal) {
+    await Promise.all([
+      notify(players.home, "match_approved", { leagueId, matchId }),
+      notify(players.away, "match_approved", { leagueId, matchId }),
+    ]);
+  }
+
+  if (before.status !== "disputed" && after.status === "disputed") {
+    await notify(await getAdminUid(), "admin_dispute", { leagueId, matchId });
+  }
+
+  if (!before.hasContactIssue && after.hasContactIssue) {
+    await notify(await getAdminUid(), "admin_contact_issue", { leagueId, matchId });
+  }
+
+  // ให้แข่งใหม่: ผลถูกเคลียร์กลับเป็น scheduled และมีของเก่าถูกเก็บเข้า submissionHistory เพิ่ม
+  const replayed =
+    after.status === "scheduled" &&
+    before.status !== "scheduled" &&
+    (after.submissionHistory?.length ?? 0) > (before.submissionHistory?.length ?? 0);
+  if (replayed) {
+    await Promise.all([
+      notify(players.home, "replay_requested", { leagueId, matchId }),
+      notify(players.away, "replay_requested", { leagueId, matchId }),
+    ]);
+  }
+});

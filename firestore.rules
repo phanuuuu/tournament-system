@@ -128,10 +128,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // สร้างได้จาก Cloud Function เท่านั้น (Admin SDK ข้าม rules) — client แค่อ่าน/ติ๊กอ่านแล้วของตัวเอง
     match /notifications/{notifId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow create: if false;
       allow delete: if false;
     }
   }

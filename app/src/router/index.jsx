@@ -15,6 +15,7 @@ import LeaguePublicDetailPage from "../pages/LeaguePublicDetailPage";
 import MatchPage from "../pages/MatchPage";
 import AdminDisputesPage from "../pages/AdminDisputesPage";
 import NotFoundPage from "../pages/NotFoundPage";
+import AppLayout from "../components/AppLayout";
 
 function RootPage() {
   const { profile } = useAuth();
@@ -32,17 +33,20 @@ export default function AppRouter() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
-          <Route path="/" element={<RootPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/leagues" element={<LeagueListPage />} />
-          <Route path="/leagues/:leagueId" element={<LeaguePublicDetailPage />} />
-          <Route path="/matches/:matchId" element={<MatchPage />} />
 
-          <Route element={<AdminRoute />}>
-            <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
-            <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
-            <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
-            <Route path="/admin/disputes" element={<AdminDisputesPage />} />
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<RootPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/leagues" element={<LeagueListPage />} />
+            <Route path="/leagues/:leagueId" element={<LeaguePublicDetailPage />} />
+            <Route path="/matches/:matchId" element={<MatchPage />} />
+
+            <Route element={<AdminRoute />}>
+              <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
+              <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
+              <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
+              <Route path="/admin/disputes" element={<AdminDisputesPage />} />
+            </Route>
           </Route>
         </Route>
 
