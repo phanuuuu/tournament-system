@@ -60,3 +60,22 @@ button[type="submit"] {
   border-radius: 50%;
   object-fit: cover;
 }
+
+.admin-nav,
+.admin-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.league-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 16px;
+}
+
+.league-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}

@@ -41,8 +41,32 @@ service cloud.firestore {
     }
 
     match /leagues/{leagueId} {
+      function isSelfJoin() {
+        let before = resource.data.playerIds;
+        let after = request.resource.data.playerIds;
+        return resource.data.status == 'open'
+          && after.size() == before.size() + 1
+          && after.hasAll(before)
+          && after.hasAny([request.auth.uid])
+          && !before.hasAny([request.auth.uid])
+          && after.size() <= resource.data.size;
+      }
+
+      function isSelfLeave() {
+        let before = resource.data.playerIds;
+        let after = request.resource.data.playerIds;
+        return resource.data.status == 'open'
+          && before.size() == after.size() + 1
+          && before.hasAll(after)
+          && before.hasAny([request.auth.uid])
+          && !after.hasAny([request.auth.uid]);
+      }
+
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin();
+      allow delete: if isAdmin() && resource.data.status != 'ongoing';
+      allow update: if isAdmin() || ((isSelfJoin() || isSelfLeave())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['playerIds']));
 
       match /byeBans/{uid} {
         allow read: if true;

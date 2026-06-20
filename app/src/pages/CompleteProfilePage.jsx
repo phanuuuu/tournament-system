@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { doc, getDocFromServer } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { createUserProfile } from "../firebase/users";
 import { generateRandomAvatar } from "../utils/avatar";
+import { db } from "../firebase/config";
 
 const URL_PATTERN = /^https?:\/\/.+/i;
 
@@ -36,6 +38,14 @@ export default function CompleteProfilePage() {
 
     setSubmitting(true);
     try {
+      // กันเหตุการณ์ที่หน้านี้โผล่มาทั้งที่จริงมีโปรไฟล์อยู่แล้ว (เช่น เน็ตกระตุกตอนโหลด)
+      // เช็คกับ server ตรง ๆ อีกครั้งก่อนสร้างทับของเดิม
+      const existing = await getDocFromServer(doc(db, "users", user.uid));
+      if (existing.exists()) {
+        navigate("/", { replace: true });
+        return;
+      }
+
       await createUserProfile(user.uid, {
         displayName: form.displayName.trim(),
         phone: form.phone.trim(),

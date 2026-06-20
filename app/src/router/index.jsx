@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ProtectedRoute, GuestRoute } from "./ProtectedRoute";
+import { ProtectedRoute, GuestRoute, AdminRoute } from "./ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 import LoginPage from "../pages/LoginPage";
 import SignupPage from "../pages/SignupPage";
@@ -7,6 +7,9 @@ import CompleteProfilePage from "../pages/CompleteProfilePage";
 import ProfilePage from "../pages/ProfilePage";
 import HomePage from "../pages/HomePage";
 import AdminDashboardPage from "../pages/AdminDashboardPage";
+import AdminLeagueListPage from "../pages/AdminLeagueListPage";
+import AdminCreateLeaguePage from "../pages/AdminCreateLeaguePage";
+import AdminLeagueDetailPage from "../pages/AdminLeagueDetailPage";
 import NotFoundPage from "../pages/NotFoundPage";
 
 function RootPage() {
@@ -27,6 +30,12 @@ export default function AppRouter() {
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/" element={<RootPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
+            <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
+            <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
+          </Route>
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

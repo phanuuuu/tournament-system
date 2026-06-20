@@ -1,0 +1,33 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { subscribeToLeagues } from "../firebase/leagues";
+
+const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
+const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "กำลังแข่ง", finished: "จบแล้ว" };
+
+export default function AdminLeagueListPage() {
+  const [leagues, setLeagues] = useState(null);
+
+  useEffect(() => subscribeToLeagues(setLeagues), []);
+
+  return (
+    <div className="page">
+      <h1>ลีคทั้งหมด</h1>
+      <Link to="/admin/leagues/new">+ สร้างลีคใหม่</Link>
+
+      {leagues === null && <p>กำลังโหลด...</p>}
+      {leagues?.length === 0 && <p>ยังไม่มีลีค</p>}
+
+      <ul className="league-list">
+        {leagues?.map((league) => (
+          <li key={league.id}>
+            <Link to={`/admin/leagues/${league.id}`}>
+              {league.name} — {FORMAT_LABEL[league.format]} ({league.playerIds.length}/{league.size}) —{" "}
+              {STATUS_LABEL[league.status]}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

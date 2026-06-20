@@ -24,6 +24,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!user) return;
     const unsubProfile = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      // ถ้ายังไม่เจอเอกสารแต่มาจาก cache เปล่า (ยังไม่เชื่อมต่อ server) อย่าฟันธงว่าไม่มีโปรไฟล์
+      // กันพลาดเด้งไปหน้า complete-profile ทั้งที่มีโปรไฟล์อยู่แล้วจริง ๆ บน server
+      if (!snap.exists() && snap.metadata.fromCache) return;
       setProfile(snap.exists() ? snap.data() : null);
       setLoading(false);
     });
