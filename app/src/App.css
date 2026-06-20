@@ -78,4 +78,30 @@ button[type="submit"] {
 .league-list li {
   padding: 10px 0;
   border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tabs button.tab-active {
+  background: #2563eb;
+  color: white;
+}
+
+.match-list-raw ul {
+  list-style: none;
+  padding: 0;
+}
+
+.match-list-raw li {
+  padding: 6px 0;
+  font-size: 14px;
+  border-bottom: 1px solid #eee;
 }

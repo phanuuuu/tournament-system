@@ -12,6 +12,7 @@ import {
   query,
 } from "firebase/firestore";
 import { db } from "./config";
+import { generateCupRound1, generatePointsSchedule } from "./matches";
 
 export function subscribeToLeagues(callback) {
   const q = query(collection(db, "leagues"), orderBy("createdAt", "desc"));
@@ -77,10 +78,21 @@ export async function kickPlayer(leagueId, uid) {
   await updateDoc(doc(db, "leagues", leagueId), { playerIds: arrayRemove(uid) });
 }
 
-export async function startLeague(leagueId) {
-  await updateDoc(doc(db, "leagues", leagueId), {
+export async function startLeague(league) {
+  if (!canStartLeague(league)) {
+    throw new Error("เงื่อนไขจำนวนผู้เล่นยังไม่ครบ ไม่สามารถเริ่มลีคได้");
+  }
+
+  if (league.format === "cup") {
+    await generateCupRound1(league.id, league.playerIds);
+  } else {
+    await generatePointsSchedule(league.id, league.playerIds, league.matchType);
+  }
+
+  await updateDoc(doc(db, "leagues", league.id), {
     status: "ongoing",
     startedAt: serverTimestamp(),
+    currentRound: league.format === "cup" ? 1 : null,
   });
 }
 

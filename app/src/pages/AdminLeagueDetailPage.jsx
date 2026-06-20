@@ -8,7 +8,9 @@ import {
   canStartLeague,
   canDeleteLeague,
 } from "../firebase/leagues";
+import { subscribeToLeagueMatches } from "../firebase/matches";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
+import MatchListRaw from "../components/MatchListRaw";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
@@ -18,17 +20,19 @@ export default function AdminLeagueDetailPage() {
   const { leagueId } = useParams();
   const navigate = useNavigate();
   const [league, setLeague] = useState(undefined);
+  const [matches, setMatches] = useState([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const profiles = usePublicProfiles(league?.playerIds);
 
   useEffect(() => subscribeToLeague(leagueId, setLeague), [leagueId]);
+  useEffect(() => subscribeToLeagueMatches(leagueId, setMatches), [leagueId]);
 
   async function handleStart() {
     setError("");
     setBusy(true);
     try {
-      await startLeague(leagueId);
+      await startLeague(league);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -108,6 +112,8 @@ export default function AdminLeagueDetailPage() {
           </button>
         )}
       </div>
+
+      {matches.length > 0 && <MatchListRaw matches={matches} profiles={profiles} />}
     </div>
   );
 }

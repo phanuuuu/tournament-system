@@ -76,7 +76,10 @@ service cloud.firestore {
 
     match /matches/{matchId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow create: if isAdmin();
+      // เฟส 5 จะจำกัด update ให้เฉพาะคู่แข่งในแมตช์/แอดมินเท่าที่จำเป็น
+      allow update: if isSignedIn();
+      allow delete: if false;
     }
 
     match /notifications/{notifId} {

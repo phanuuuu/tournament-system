@@ -10,6 +10,8 @@ import AdminDashboardPage from "../pages/AdminDashboardPage";
 import AdminLeagueListPage from "../pages/AdminLeagueListPage";
 import AdminCreateLeaguePage from "../pages/AdminCreateLeaguePage";
 import AdminLeagueDetailPage from "../pages/AdminLeagueDetailPage";
+import LeagueListPage from "../pages/LeagueListPage";
+import LeaguePublicDetailPage from "../pages/LeaguePublicDetailPage";
 import NotFoundPage from "../pages/NotFoundPage";
 
 function RootPage() {
@@ -30,6 +32,8 @@ export default function AppRouter() {
           <Route path="/complete-profile" element={<CompleteProfilePage />} />
           <Route path="/" element={<RootPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/leagues" element={<LeagueListPage />} />
+          <Route path="/leagues/:leagueId" element={<LeaguePublicDetailPage />} />
 
           <Route element={<AdminRoute />}>
             <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
