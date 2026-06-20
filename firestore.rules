@@ -1,7 +1,7 @@
 rules_version = '2';
 
-// ฉบับร่างเริ่มต้น (เฟส 1) — เปิดกว้างพอให้พัฒนาได้
-// จะเข้มขึ้นทีละเฟส: เฟส 2 ผูก meta/admin + role, เฟส 5 ผูก submissions/matches ละเอียดขึ้น
+// เฟส 2: แยกข้อมูลส่วนตัว (users) ออกจากข้อมูลสาธารณะ (publicProfiles)
+// ตามตารางการมองเห็นข้อมูลในสเปกข้อ 3
 service cloud.firestore {
   match /databases/{database}/documents {
     function isSignedIn() {
@@ -23,11 +23,21 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ข้อมูลส่วนตัว: ชื่อ, เบอร์, เฟซบุ๊ก, Line, role
+    // เห็นได้แค่เจ้าของ + แอดมิน (เฟซบุ๊กที่คู่แข่งควรเห็น ผ่าน Cloud Function getOpponentContact เท่านั้น)
     match /users/{uid} {
-      allow read: if isSignedIn();
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(uid) && request.resource.data.role == 'player';
       allow update: if (isOwner(uid) && request.resource.data.role == resource.data.role) || isAdmin();
       allow delete: if false;
+    }
+
+    // ข้อมูลสาธารณะ: ชื่อที่ใช้แสดง + รูปโปรไฟล์ เท่านั้น เห็นได้ทุกคนที่ล็อกอิน
+    // เขียนได้จาก Cloud Function เท่านั้น (mirror จาก users อัตโนมัติ)
+    match /publicProfiles/{uid} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     match /leagues/{leagueId} {

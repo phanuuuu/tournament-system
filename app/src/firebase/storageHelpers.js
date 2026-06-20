@@ -1,0 +1,8 @@
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "./config";
+
+export async function uploadProfilePhoto(uid, file) {
+  const fileRef = ref(storage, `profilePhotos/${uid}/${Date.now()}-${file.name}`);
+  await uploadBytes(fileRef, file);
+  return getDownloadURL(fileRef);
+}
