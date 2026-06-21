@@ -2,6 +2,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { ToastProvider } from "./context/ToastContext";
 import ToastContainer from "./components/ToastContainer";
+import BootSplashGate from "./components/BootSplashGate";
 import AppRouter from "./router";
 import "./App.css";
 
@@ -10,7 +11,9 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
-          <AppRouter />
+          <BootSplashGate>
+            <AppRouter />
+          </BootSplashGate>
           <ToastContainer />
         </AuthProvider>
       </ToastProvider>

@@ -1171,3 +1171,140 @@ button.btn-ghost:hover:not(:disabled) {
     transition: none !important;
   }
 }
+
+/* ====================================================================
+   Splash screen ตอนเปิดแอป — รอ Firebase Auth resolve ครั้งแรก
+   คนละตัวกับ Skeleton (ใช้ตอนหน้าใดหน้าหนึ่งกำลังดึงข้อมูล)
+   ==================================================================== */
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-splash);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: var(--bg-image);
+  background-color: var(--bg);
+  opacity: 1;
+  transition: opacity 380ms ease;
+}
+
+.splash-fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 24px;
+  text-align: center;
+}
+
+.splash-wordmark {
+  position: relative;
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(26px, 7vw, 38px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.splash-glow {
+  position: absolute;
+  inset: 0;
+  color: var(--accent);
+  filter: blur(14px);
+  opacity: 0;
+  animation: splash-glow-in 900ms ease-out forwards;
+  animation-delay: 500ms;
+}
+
+.splash-text {
+  position: relative;
+  display: inline-flex;
+  color: var(--text);
+}
+
+.splash-chunk {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: splash-chunk-in 480ms ease-out forwards;
+}
+
+@keyframes splash-chunk-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splash-glow-in {
+  to {
+    opacity: 0.65;
+  }
+}
+
+.splash-bar-track {
+  width: 160px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  overflow: hidden;
+  position: relative;
+}
+
+.splash-bar-glow {
+  position: absolute;
+  inset: 0;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--accent-2), transparent);
+  box-shadow: var(--glow-sm);
+  animation: splash-bar-sweep 1.3s ease-in-out infinite;
+}
+
+@keyframes splash-bar-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+.splash-status-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.splash-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen {
+    transition: opacity 150ms ease;
+  }
+  .splash-glow {
+    animation: none;
+    opacity: 0.45;
+  }
+  .splash-chunk {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .splash-bar-glow {
+    animation: none;
+    width: 100%;
+    transform: none;
+  }
+}
