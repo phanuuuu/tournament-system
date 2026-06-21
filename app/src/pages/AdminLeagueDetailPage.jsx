@@ -124,12 +124,12 @@ export default function AdminLeagueDetailPage() {
             <span className="row-actions">
               {league.status === "open" && (
                 <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleKick(uid)}>
-                  เตะออก
+                  {busy && <Spinner size="sm" />} เตะออก
                 </button>
               )}
               {league.format === "points" && league.status === "ongoing" && (
                 <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleToggleBan(uid)}>
-                  {byeBans[uid]?.active ? "เลิกแพ้บาย" : "แพ้บาย"}
+                  {busy && <Spinner size="sm" />} {byeBans[uid]?.active ? "เลิกแพ้บาย" : "แพ้บาย"}
                 </button>
               )}
             </span>
@@ -140,7 +140,7 @@ export default function AdminLeagueDetailPage() {
       <div className="admin-actions">
         {league.status === "open" && (
           <button type="button" className="btn-primary" disabled={busy || !canStartLeague(league)} onClick={handleStart}>
-            เริ่มลีค
+            {busy && <Spinner size="sm" />} เริ่มลีค
           </button>
         )}
         {!canStartLeague(league) && league.status === "open" && (
@@ -152,12 +152,12 @@ export default function AdminLeagueDetailPage() {
         )}
         {league.format === "cup" && league.status === "ongoing" && league.currentRound > 1 && (
           <button type="button" className="btn-ghost" disabled={busy} onClick={handleRevert}>
-            ย้อนรอบล่าสุด
+            {busy && <Spinner size="sm" />} ย้อนรอบล่าสุด
           </button>
         )}
         {canDeleteLeague(league) && (
           <button type="button" className="btn-danger" disabled={busy} onClick={handleDelete}>
-            ลบลีค
+            {busy && <Spinner size="sm" />} ลบลีค
           </button>
         )}
       </div>

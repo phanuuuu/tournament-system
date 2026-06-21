@@ -1,9 +1,10 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config";
 import { useAuth } from "../context/AuthContext";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
+import RouteTransition from "./RouteTransition";
 
 export default function AppLayout() {
   const { profile } = useAuth();
@@ -30,7 +31,7 @@ export default function AppLayout() {
         </div>
       </header>
       <main className="app-main">
-        <Outlet />
+        <RouteTransition />
       </main>
     </div>
   );

@@ -5,6 +5,7 @@ import { subscribeToLeagues, joinLeague, leaveLeague } from "../firebase/leagues
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import PlayerCountRing from "../components/PlayerCountRing";
+import Spinner from "../components/Spinner";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
@@ -128,6 +129,7 @@ export default function LeagueListPage() {
                     disabled={busyId === league.id || (full && !joined)}
                     onClick={() => (joined ? handleLeave(league) : handleJoin(league))}
                   >
+                    {busyId === league.id && <Spinner size="sm" />}
                     {joined ? "เข้าร่วมแล้ว (ออก)" : full ? "เต็มแล้ว" : "เข้าร่วม"}
                   </button>
                 )}

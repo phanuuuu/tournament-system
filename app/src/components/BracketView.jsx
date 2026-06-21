@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const UNIT_PX = 92; // ความสูงต่อช่องของรอบแรก — รอบหลัง ๆ จะเว้นห่างเป็น 2x, 4x, ... ของค่านี้โดยอัตโนมัติ
+const CELEBRATE_MS = 1600;
 
 function scoreLabel(side, m) {
   if (m.status === "walkover") return null;
@@ -20,8 +22,15 @@ function winnerSide(m) {
   return null;
 }
 
+function isSettled(status) {
+  return status === "approved" || status === "walkover";
+}
+
 export default function BracketView({ matches, profiles, currentRound }) {
   const { user } = useAuth();
+  const prevStatusRef = useRef({});
+  const [justResolved, setJustResolved] = useState({});
+  const [justAdvanced, setJustAdvanced] = useState({});
 
   const rounds = {};
   for (const m of matches) {
@@ -38,6 +47,57 @@ export default function BracketView({ matches, profiles, currentRound }) {
   const totalHeight = UNIT_PX * (rounds[firstRound]?.length ?? 1);
   const unitFor = (round) => totalHeight / (rounds[round]?.length ?? 1);
 
+  // ตรวจแมตช์ที่เพิ่งจบสด ๆ (เทียบ status รอบนี้กับรอบก่อน) เพื่อเล่นแอนิเมชัน "ติดไฟ" ที่การ์ด
+  // และ "เส้นเชื่อมวิ่ง" ที่ connector ของแมตช์รอบถัดไป (ถ้าสร้างขึ้นมาแล้ว)
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    const resolvedIds = [];
+    for (const m of matches) {
+      if (m.kind !== "regular") continue;
+      const p = prev[m.id];
+      if (p != null && !isSettled(p) && isSettled(m.status)) resolvedIds.push(m);
+    }
+
+    if (resolvedIds.length > 0) {
+      const advancedNextIds = [];
+      for (const m of resolvedIds) {
+        const nextRound = rounds[m.round + 1];
+        const nextMatch = nextRound?.find((nm) => nm.slot === Math.floor(m.slot / 2));
+        if (nextMatch) advancedNextIds.push(nextMatch.id);
+      }
+
+      setJustResolved((old) => {
+        const next = { ...old };
+        for (const m of resolvedIds) next[m.id] = true;
+        return next;
+      });
+      setJustAdvanced((old) => {
+        const next = { ...old };
+        for (const id of advancedNextIds) next[id] = true;
+        return next;
+      });
+
+      const clearIds = resolvedIds.map((m) => m.id);
+      setTimeout(() => {
+        setJustResolved((old) => {
+          const next = { ...old };
+          for (const id of clearIds) delete next[id];
+          return next;
+        });
+        setJustAdvanced((old) => {
+          const next = { ...old };
+          for (const id of advancedNextIds) delete next[id];
+          return next;
+        });
+      }, CELEBRATE_MS);
+    }
+
+    const nextPrev = {};
+    for (const m of matches) if (m.kind === "regular") nextPrev[m.id] = m.status;
+    prevStatusRef.current = nextPrev;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matches]);
+
   function isOnPlayerPath(m) {
     return m.players.home === user.uid || m.players.away === user.uid;
   }
@@ -53,11 +113,15 @@ export default function BracketView({ matches, profiles, currentRound }) {
                 const isFirstRound = round === firstRound;
                 const winner = winnerSide(m);
                 const mine = isOnPlayerPath(m);
+                const resolved = !!justResolved[m.id];
+                const advanced = !!justAdvanced[m.id];
                 return (
                   <div key={m.id} className="bracket-slot">
                     {!isFirstRound && (
                       <div
-                        className={`bracket-connector ${mine ? "bracket-connector-mine" : ""}`}
+                        className={`bracket-connector ${mine ? "bracket-connector-mine" : ""} ${
+                          advanced ? "bracket-connector-run" : ""
+                        }`}
                         style={{ height: unitFor(round - 1) }}
                         aria-hidden="true"
                       >
@@ -67,7 +131,12 @@ export default function BracketView({ matches, profiles, currentRound }) {
                         <span className="bracket-connector-out" />
                       </div>
                     )}
-                    <Link to={`/matches/${m.id}`} className={`bracket-match ${mine ? "bracket-match-mine" : ""}`}>
+                    <Link
+                      to={`/matches/${m.id}`}
+                      className={`bracket-match ${mine ? "bracket-match-mine" : ""} ${
+                        resolved ? "bracket-match-resolved" : ""
+                      }`}
+                    >
                       <div className={winner === "home" ? "bracket-side-winner" : ""}>
                         {profiles[m.players.home]?.displayName ?? "..."} {scoreLabel("home", m)}
                       </div>

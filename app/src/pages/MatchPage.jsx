@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
+import confetti from "canvas-confetti";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMatch, toggleContactUnreachable, adminOverrideResult } from "../firebase/matches";
 import { subscribeToLeague } from "../firebase/leagues";
@@ -52,6 +53,25 @@ export default function MatchPage() {
   const isParticipant = match && (isHome || match.players.away === user.uid);
   const opponentUid = match ? (isHome ? match.players.away : match.players.home) : null;
   const needsPenalty = league?.format === "cup" || match?.kind === "tiebreaker";
+
+  // จับจังหวะ "ผลอนุมัติตรงกันอัตโนมัติ" สด ๆ ตอนเปิดหน้าอยู่ — เฉพาะ decidedBy:"auto" เท่านั้น
+  // (ไม่ฉลองตอนแอดมินตัดสินข้อพิพาท เพราะนั่นไม่ใช่ช่วงเวลาที่ควรรู้สึกฟิน)
+  const prevStatusRef = useRef(undefined);
+  const [justApproved, setJustApproved] = useState(false);
+  useEffect(() => {
+    if (!match) return;
+    const prevStatus = prevStatusRef.current;
+    if (prevStatus != null && prevStatus !== "approved" && match.status === "approved" && match.approvedResult?.decidedBy === "auto") {
+      setJustApproved(true);
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      if (!reduceMotion) {
+        confetti({ particleCount: 70, spread: 60, scalar: 0.85, origin: { y: 0.55 }, ticks: 160 });
+      }
+      if (navigator.vibrate) navigator.vibrate(60);
+      setTimeout(() => setJustApproved(false), 1200);
+    }
+    prevStatusRef.current = match.status;
+  }, [match?.status, match?.approvedResult]);
 
   useEffect(() => {
     if (!match || !isParticipant) return;
@@ -243,7 +263,7 @@ export default function MatchPage() {
       {error && <p className="form-error">{error}</p>}
 
       {match.status === "approved" && (
-        <div className="match-result-banner status-green">
+        <div className={`match-result-banner status-green ${justApproved ? "match-result-flash" : ""}`}>
           ผลอนุมัติแล้ว: {match.approvedResult.scoreHome} - {match.approvedResult.scoreAway}
           {match.approvedResult.penaltyHome != null && (
             <>

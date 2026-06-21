@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMyNotifications, markNotificationRead, markAllNotificationsRead } from "../firebase/notifications";
+import { useToast } from "../context/ToastContext";
 import EmptyState from "./EmptyState";
 
 const TYPE_LABEL = {
@@ -11,6 +12,10 @@ const TYPE_LABEL = {
   replay_requested: "แอดมินขอให้แข่งใหม่",
   admin_dispute: "มีข้อพิพาทรอตัดสิน",
   admin_contact_issue: "มีคำขอติดต่อไม่ได้รอดำเนินการ",
+};
+
+const CELEBRATE_TOAST = {
+  advanced_round: "ผ่านเข้ารอบถัดไปแล้ว! 🎉",
 };
 
 function linkFor(n) {
@@ -23,10 +28,31 @@ function linkFor(n) {
 export default function NotificationBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const showToast = useToast();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
+  const [bounce, setBounce] = useState(false);
+  const seenIdsRef = useRef(null);
 
-  useEffect(() => subscribeToMyNotifications(user.uid, setNotifications), [user.uid]);
+  useEffect(() => {
+    return subscribeToMyNotifications(user.uid, (list) => {
+      // โหลดครั้งแรก แค่บันทึก id ที่เห็นแล้วไว้ ไม่ฉลอง/เด้ง (กันแจ้งเตือนเก่ารัวตอนเพิ่งเปิดแอป)
+      if (seenIdsRef.current === null) {
+        seenIdsRef.current = new Set(list.map((n) => n.id));
+        setNotifications(list);
+        return;
+      }
+      const newOnes = list.filter((n) => !seenIdsRef.current.has(n.id));
+      seenIdsRef.current = new Set(list.map((n) => n.id));
+      setNotifications(list);
+      if (newOnes.length === 0) return;
+      setBounce(true);
+      setTimeout(() => setBounce(false), 650);
+      for (const n of newOnes) {
+        if (CELEBRATE_TOAST[n.type]) showToast(CELEBRATE_TOAST[n.type], "success");
+      }
+    });
+  }, [user.uid]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -39,7 +65,10 @@ export default function NotificationBell() {
   return (
     <div className="notification-bell">
       <button type="button" onClick={() => setOpen((v) => !v)}>
-        🔔{unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+        🔔
+        {unreadCount > 0 && (
+          <span className={`notification-badge ${bounce ? "notification-badge-bounce" : ""}`}>{unreadCount}</span>
+        )}
       </button>
 
       {open && (

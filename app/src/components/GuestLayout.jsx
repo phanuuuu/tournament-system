@@ -1,5 +1,5 @@
-import { Outlet } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
+import RouteTransition from "./RouteTransition";
 
 export default function GuestLayout() {
   return (
@@ -9,7 +9,7 @@ export default function GuestLayout() {
         <ThemeToggle />
       </header>
       <main className="app-main">
-        <Outlet />
+        <RouteTransition />
       </main>
     </div>
   );

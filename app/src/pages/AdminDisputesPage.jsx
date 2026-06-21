@@ -11,6 +11,7 @@ import { resolveDisputeUseSubmission, resolveDisputeReplay } from "../firebase/m
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import Spinner from "../components/Spinner";
 
 export default function AdminDisputesPage() {
   const navigate = useNavigate();
@@ -121,7 +122,7 @@ export default function AdminDisputesPage() {
                   {home.photoURL ? "📷" : ""}
                 </span>
                 <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.home)}>
-                  ใช้ผลนี้
+                  {busyId === m.id && <Spinner size="sm" />} ใช้ผลนี้
                 </button>
               </div>
               <div className="dispute-row">
@@ -131,11 +132,11 @@ export default function AdminDisputesPage() {
                   {away.photoURL ? "📷" : ""}
                 </span>
                 <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.away)}>
-                  ใช้ผลนี้
+                  {busyId === m.id && <Spinner size="sm" />} ใช้ผลนี้
                 </button>
               </div>
               <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleReplay(m.id)}>
-                ให้แข่งใหม่
+                {busyId === m.id && <Spinner size="sm" />} ให้แข่งใหม่
               </button>
             </li>
           );
@@ -157,7 +158,7 @@ export default function AdminDisputesPage() {
                 {m.contactUnreachable?.[m.players.home] && <span className="status-badge status-orange"> กดติดต่อไม่ได้</span>}
               </span>
               <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleGrantWalkover(m.id, m.players.home)}>
-                ให้ผ่านแบบชนะบาย
+                {busyId === m.id && <Spinner size="sm" />} ให้ผ่านแบบชนะบาย
               </button>
             </div>
             <div className="dispute-row">
@@ -166,11 +167,11 @@ export default function AdminDisputesPage() {
                 {m.contactUnreachable?.[m.players.away] && <span className="status-badge status-orange"> กดติดต่อไม่ได้</span>}
               </span>
               <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleGrantWalkover(m.id, m.players.away)}>
-                ให้ผ่านแบบชนะบาย
+                {busyId === m.id && <Spinner size="sm" />} ให้ผ่านแบบชนะบาย
               </button>
             </div>
             <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleClearContactIssue(m.id)}>
-              ยกเลิกคิวนี้ (ติดต่อได้แล้ว แข่งปกติ)
+              {busyId === m.id && <Spinner size="sm" />} ยกเลิกคิวนี้ (ติดต่อได้แล้ว แข่งปกติ)
             </button>
           </li>
         ))}
