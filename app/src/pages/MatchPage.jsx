@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
-import confetti from "canvas-confetti";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMatch, toggleContactUnreachable, adminOverrideResult } from "../firebase/matches";
 import { subscribeToLeague } from "../firebase/leagues";
@@ -65,7 +64,10 @@ export default function MatchPage() {
       setJustApproved(true);
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       if (!reduceMotion) {
-        confetti({ particleCount: 70, spread: 60, scalar: 0.85, origin: { y: 0.55 }, ticks: 160 });
+        // โหลด canvas-confetti แบบ lazy ตอนจะใช้จริงเท่านั้น ไม่ให้ไปอยู่ใน bundle หลัก
+        import("canvas-confetti").then(({ default: confetti }) => {
+          confetti({ particleCount: 50, spread: 55, scalar: 0.8, origin: { y: 0.55 }, ticks: 110 });
+        });
       }
       if (navigator.vibrate) navigator.vibrate(60);
       setTimeout(() => setJustApproved(false), 1200);

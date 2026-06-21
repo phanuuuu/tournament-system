@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { ProtectedRoute, GuestRoute, AdminRoute } from "./ProtectedRoute";
 import { useAuth } from "../context/AuthContext";
 import LoginPage from "../pages/LoginPage";
@@ -6,22 +7,48 @@ import SignupPage from "../pages/SignupPage";
 import CompleteProfilePage from "../pages/CompleteProfilePage";
 import ProfilePage from "../pages/ProfilePage";
 import HomePage from "../pages/HomePage";
-import AdminDashboardPage from "../pages/AdminDashboardPage";
-import AdminLeagueListPage from "../pages/AdminLeagueListPage";
-import AdminCreateLeaguePage from "../pages/AdminCreateLeaguePage";
-import AdminLeagueDetailPage from "../pages/AdminLeagueDetailPage";
 import LeagueListPage from "../pages/LeagueListPage";
 import LeaguePublicDetailPage from "../pages/LeaguePublicDetailPage";
 import MatchPage from "../pages/MatchPage";
-import AdminDisputesPage from "../pages/AdminDisputesPage";
-import AdminStaleMatchesPage from "../pages/AdminStaleMatchesPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import AppLayout from "../components/AppLayout";
 import GuestLayout from "../components/GuestLayout";
+import Spinner from "../components/Spinner";
+
+// หน้าแอดมินแยก chunk ออกจาก bundle หลัก — ผู้เล่นทั่วไป (ส่วนใหญ่ของผู้ใช้) ไม่ต้องโหลดโค้ดนี้เลย
+const AdminDashboardPage = lazy(() => import("../pages/AdminDashboardPage"));
+const AdminLeagueListPage = lazy(() => import("../pages/AdminLeagueListPage"));
+const AdminCreateLeaguePage = lazy(() => import("../pages/AdminCreateLeaguePage"));
+const AdminLeagueDetailPage = lazy(() => import("../pages/AdminLeagueDetailPage"));
+const AdminDisputesPage = lazy(() => import("../pages/AdminDisputesPage"));
+const AdminStaleMatchesPage = lazy(() => import("../pages/AdminStaleMatchesPage"));
+
+function PageLoader() {
+  return (
+    <div className="page-loader">
+      <Spinner size="lg" />
+    </div>
+  );
+}
+
+function SuspendedOutlet() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Outlet />
+    </Suspense>
+  );
+}
 
 function RootPage() {
   const { profile } = useAuth();
-  return profile?.role === "admin" ? <AdminDashboardPage /> : <HomePage />;
+  if (profile?.role === "admin") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <AdminDashboardPage />
+      </Suspense>
+    );
+  }
+  return <HomePage />;
 }
 
 export default function AppRouter() {
@@ -45,11 +72,13 @@ export default function AppRouter() {
             <Route path="/matches/:matchId" element={<MatchPage />} />
 
             <Route element={<AdminRoute />}>
-              <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
-              <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
-              <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
-              <Route path="/admin/disputes" element={<AdminDisputesPage />} />
-              <Route path="/admin/stale-matches" element={<AdminStaleMatchesPage />} />
+              <Route element={<SuspendedOutlet />}>
+                <Route path="/admin/leagues" element={<AdminLeagueListPage />} />
+                <Route path="/admin/leagues/new" element={<AdminCreateLeaguePage />} />
+                <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
+                <Route path="/admin/disputes" element={<AdminDisputesPage />} />
+                <Route path="/admin/stale-matches" element={<AdminStaleMatchesPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>
