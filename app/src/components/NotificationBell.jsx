@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMyNotifications, markNotificationRead, markAllNotificationsRead } from "../firebase/notifications";
+import EmptyState from "./EmptyState";
 
 const TYPE_LABEL = {
   opponent_submitted: "คู่แข่งส่งผลแล้ว รอคุณยืนยัน",
@@ -43,7 +44,7 @@ export default function NotificationBell() {
 
       {open && (
         <div className="notification-dropdown">
-          {notifications.length === 0 && <p>ยังไม่มีการแจ้งเตือน</p>}
+          {notifications.length === 0 && <EmptyState compact icon="🔔" title="ยังไม่มีการแจ้งเตือน" />}
           {notifications.length > 0 && (
             <button type="button" onClick={() => markAllNotificationsRead(notifications)}>
               อ่านทั้งหมด

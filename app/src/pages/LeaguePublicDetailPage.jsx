@@ -6,6 +6,7 @@ import { subscribeToByeBans } from "../firebase/byeBans";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { useAuth } from "../context/AuthContext";
 import LeagueResultsView from "../components/LeagueResultsView";
+import Spinner from "../components/Spinner";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
@@ -24,7 +25,7 @@ export default function LeaguePublicDetailPage() {
   useEffect(() => subscribeToLeagueMatches(leagueId, setMatches), [leagueId]);
   useEffect(() => subscribeToByeBans(leagueId, setByeBans), [leagueId]);
 
-  if (league === undefined) return <p>กำลังโหลด...</p>;
+  if (league === undefined) return <div className="page-loader"><Spinner size="lg" /></div>;
   if (league === null) return <p>ไม่พบลีคนี้</p>;
 
   return (

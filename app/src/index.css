@@ -148,6 +148,10 @@
   --transition-fast: 120ms ease;
   --transition-base: 200ms ease;
 
+  /* z-index scale กันชนกัน ใช้ค่าเดิมที่มีอยู่แล้ว (header sticky=20, notification dropdown=30) เป็นฐาน */
+  --z-dropdown: 30;
+  --z-toast: 80;
+
   /* ===== ทับชื่อเก่าไว้ชั่วคราว กันโค้ดเดิมพัง ระหว่างไล่ย้ายทีละหน้าในเฟส 3 ===== */
   --color-primary: var(--accent);
   --color-primary-dark: var(--accent);

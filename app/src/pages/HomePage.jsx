@@ -6,6 +6,8 @@ import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { computeStandings } from "../utils/standings";
 import { getActionItems, getCupStatus } from "../utils/playerHome";
 import StatusBadge from "../components/StatusBadge";
+import Skeleton from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 import { useEffect, useState } from "react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
@@ -31,8 +33,10 @@ export default function HomePage() {
       <h1>สวัสดี, {profile?.displayName}</h1>
 
       <h2>ต้องทำต่อ</h2>
-      {leagues === null && <p>กำลังโหลด...</p>}
-      {leagues !== null && actionItems.length === 0 && <p>ไม่มีอะไรต้องทำตอนนี้ 🎉</p>}
+      {leagues === null && <Skeleton width="100%" height="48px" radius="12px" />}
+      {leagues !== null && actionItems.length === 0 && (
+        <EmptyState compact icon="🎉" title="ไม่มีอะไรต้องทำตอนนี้" subtitle="พักได้ รอคู่แข่งบ้าง" />
+      )}
       <ul className="action-list">
         {actionItems.map(({ type, league, match }) => (
           <li key={match.id}>
@@ -48,9 +52,15 @@ export default function HomePage() {
 
       <h2>ลีคของฉัน</h2>
       {leagues !== null && leagues.length === 0 && (
-        <p>
-          ยังไม่ได้เข้าร่วมลีคไหนเลย — <Link to="/leagues">ดูลีคที่เปิดรับสมัคร</Link>
-        </p>
+        <EmptyState
+          icon="🎮"
+          title="ยังไม่ได้เข้าร่วมลีคไหนเลย"
+          subtitle={
+            <>
+              ไปดู<Link to="/leagues">ลีคที่เปิดรับสมัคร</Link>กันเลย
+            </>
+          }
+        />
       )}
       <div className="my-league-list">
         {leagues?.map((league) => (

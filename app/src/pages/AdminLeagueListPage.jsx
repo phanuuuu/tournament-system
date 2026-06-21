@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { subscribeToLeagues } from "../firebase/leagues";
+import Skeleton from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "กำลังแข่ง", finished: "จบแล้ว" };
@@ -18,8 +20,20 @@ export default function AdminLeagueListPage() {
         + สร้างลีคใหม่
       </Link>
 
-      {leagues === null && <p>กำลังโหลด...</p>}
-      {leagues?.length === 0 && <p>ยังไม่มีลีค</p>}
+      {leagues === null && (
+        <ul className="league-list">
+          {[0, 1, 2].map((i) => (
+            <li key={i}>
+              <span style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+                <Skeleton width="60%" height="16px" />
+                <Skeleton width="40%" height="12px" />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {leagues?.length === 0 && <EmptyState icon="🏆" title="ยังไม่มีลีค" subtitle="กดสร้างลีคใหม่เพื่อเริ่มการแข่งขัน" />}
 
       <ul className="league-list">
         {leagues?.map((league) => (

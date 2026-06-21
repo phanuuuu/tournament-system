@@ -9,6 +9,8 @@ import {
 } from "../firebase/matches";
 import { resolveDisputeUseSubmission, resolveDisputeReplay } from "../firebase/matchSubmission";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
+import Skeleton from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 
 export default function AdminDisputesPage() {
   const navigate = useNavigate();
@@ -100,8 +102,8 @@ export default function AdminDisputesPage() {
       {error && <p className="form-error">{error}</p>}
 
       <h2>ข้อพิพาท (สกอร์ไม่ตรง)</h2>
-      {matches === null && <p>กำลังโหลด...</p>}
-      {matches?.length === 0 && <p>ไม่มีข้อพิพาทตอนนี้</p>}
+      {matches === null && <Skeleton width="100%" height="80px" radius="14px" />}
+      {matches?.length === 0 && <EmptyState compact icon="🕊️" title="ไม่มีข้อพิพาทตอนนี้" />}
 
       <ul className="dispute-list">
         {matches?.map((m) => {
@@ -141,8 +143,8 @@ export default function AdminDisputesPage() {
       </ul>
 
       <h2>ติดต่อคู่แข่งไม่ได้ (ถ้วย)</h2>
-      {contactIssues === null && <p>กำลังโหลด...</p>}
-      {contactIssues?.length === 0 && <p>ไม่มีคิวตอนนี้</p>}
+      {contactIssues === null && <Skeleton width="100%" height="80px" radius="14px" />}
+      {contactIssues?.length === 0 && <EmptyState compact icon="📞" title="ไม่มีคิวตอนนี้" />}
       <ul className="dispute-list">
         {contactIssues?.map((m) => (
           <li key={m.id} className="dispute-card">

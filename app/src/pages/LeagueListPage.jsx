@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToLeagues, joinLeague, leaveLeague } from "../firebase/leagues";
+import Skeleton from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
@@ -10,6 +12,11 @@ const TABS = [
   { key: "ongoing", label: "กำลังแข่ง" },
   { key: "finished", label: "จบแล้ว" },
 ];
+const EMPTY_BY_TAB = {
+  open: { icon: "📭", title: "ยังไม่มีลีคเปิดรับสมัคร", subtitle: "รอแอดมินสร้างลีคใหม่ได้เลย" },
+  ongoing: { icon: "⏳", title: "ไม่มีลีคที่กำลังแข่งอยู่ตอนนี้" },
+  finished: { icon: "🏁", title: "ยังไม่มีลีคที่จบแล้ว" },
+};
 
 export default function LeagueListPage() {
   const { user, profile } = useAuth();
@@ -64,8 +71,21 @@ export default function LeagueListPage() {
       </nav>
 
       {error && <p className="form-error">{error}</p>}
-      {leagues === null && <p>กำลังโหลด...</p>}
-      {leagues !== null && filtered.length === 0 && <p>ไม่มีลีคในหมวดนี้</p>}
+
+      {leagues === null && (
+        <ul className="league-list">
+          {[0, 1, 2].map((i) => (
+            <li key={i}>
+              <span style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+                <Skeleton width="60%" height="16px" />
+                <Skeleton width="45%" height="12px" />
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {leagues !== null && filtered.length === 0 && <EmptyState {...EMPTY_BY_TAB[tab]} />}
 
       <ul className="league-list">
         {filtered.map((league) => {

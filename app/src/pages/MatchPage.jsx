@@ -9,6 +9,7 @@ import { uploadMatchPhoto } from "../firebase/storageHelpers";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { functions } from "../firebase/config";
 import StatusBadge from "../components/StatusBadge";
+import Spinner from "../components/Spinner";
 
 export default function MatchPage() {
   const { matchId } = useParams();
@@ -160,7 +161,7 @@ export default function MatchPage() {
     }
   }
 
-  if (match === undefined || league === undefined) return <p>กำลังโหลด...</p>;
+  if (match === undefined || league === undefined) return <div className="page-loader"><Spinner size="lg" /></div>;
   if (match === null) return <p>ไม่พบแมตช์นี้</p>;
 
   const opponentName = profiles[opponentUid]?.displayName ?? "...";

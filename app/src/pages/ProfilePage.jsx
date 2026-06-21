@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { updateUserProfile } from "../firebase/users";
 import { uploadProfilePhoto } from "../firebase/storageHelpers";
 import { generateRandomAvatar } from "../utils/avatar";
+import Spinner from "../components/Spinner";
 
 const URL_PATTERN = /^https?:\/\/.+/i;
 
@@ -74,7 +75,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (!profile) return <p>กำลังโหลด...</p>;
+  if (!profile) return <div className="page-loader"><Spinner size="lg" /></div>;
 
   return (
     <div className="auth-page">
