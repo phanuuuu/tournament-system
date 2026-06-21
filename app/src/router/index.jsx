@@ -17,6 +17,7 @@ import AdminDisputesPage from "../pages/AdminDisputesPage";
 import AdminStaleMatchesPage from "../pages/AdminStaleMatchesPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import AppLayout from "../components/AppLayout";
+import GuestLayout from "../components/GuestLayout";
 
 function RootPage() {
   const { profile } = useAuth();
@@ -28,8 +29,10 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route element={<GuestRoute />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route element={<GuestLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+          </Route>
         </Route>
 
         <Route element={<ProtectedRoute />}>

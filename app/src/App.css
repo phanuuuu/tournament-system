@@ -20,15 +20,60 @@
 }
 
 .app-brand {
+  font-family: var(--font-heading);
   font-weight: 700;
   font-size: 16px;
-  color: var(--color-text);
+  letter-spacing: 0.02em;
+  color: var(--text);
 }
 
 .app-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* ===== Theme toggle ===== */
+.theme-toggle {
+  padding: 0;
+  border: none;
+  background: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.theme-toggle-track {
+  width: 46px;
+  height: 26px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: background-color var(--transition-theme), border-color var(--transition-theme);
+}
+
+.theme-toggle-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-solid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  box-shadow: var(--glow-sm);
+  transform: translateX(0);
+  transition: transform var(--transition-base), box-shadow var(--transition-theme);
+}
+
+[data-theme="light"] .theme-toggle-thumb {
+  transform: translateX(20px);
 }
 
 .app-user-name {
@@ -103,48 +148,76 @@ input:disabled {
 
 /* ===== Buttons ===== */
 button {
-  padding: 11px 16px;
+  min-height: 44px;
+  padding: 11px 18px;
   font-size: 15px;
   font-weight: 600;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
   cursor: pointer;
   font-family: inherit;
-  transition: filter 0.15s, opacity 0.15s;
+  transition: filter var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast), background-color var(--transition-theme),
+    border-color var(--transition-theme), opacity var(--transition-fast);
 }
 
-button:hover {
-  filter: brightness(0.97);
+button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
 
 button[type="submit"],
 .btn-primary {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
+  background: var(--btn-primary-bg);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--glow-md);
+}
+
+button[type="submit"]:hover:not(:disabled),
+.btn-primary:hover:not(:disabled) {
+  filter: none;
+  box-shadow: var(--glow-lg);
 }
 
 .btn-danger {
-  background: var(--color-danger);
-  border-color: var(--color-danger);
-  color: white;
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--danger-contrast);
+  box-shadow: var(--glow-danger);
 }
 
 .btn-ghost {
   background: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  box-shadow: var(--glow-sm);
 }
 
 .btn-sm {
-  padding: 6px 10px;
+  min-height: 36px;
+  padding: 7px 12px;
   font-size: 13px;
 }
 
@@ -159,14 +232,14 @@ button[type="submit"],
 }
 
 .btn-link.btn-primary {
-  color: white;
+  color: var(--accent-contrast);
 }
 
 .google-btn {
   width: 100%;
   margin-top: 4px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
 
 /* ===== Feedback text ===== */
@@ -525,8 +598,8 @@ button[type="submit"],
 }
 
 .status-yellow {
-  background: #fef9c3;
-  color: #854d0e;
+  background: var(--yellow-tint);
+  color: var(--status-yellow);
 }
 
 .status-orange {
