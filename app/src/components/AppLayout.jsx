@@ -18,7 +18,7 @@ export default function AppLayout() {
     <div className="app-shell">
       <header className="app-header">
         <Link to="/" className="app-brand">
-          ระบบจัดการแข่งเกม
+          TOURNAMENT SYSTEM
         </Link>
         <div className="app-header-actions">
           <ThemeToggle />
