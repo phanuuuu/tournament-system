@@ -437,26 +437,140 @@ button.btn-ghost:hover:not(:disabled) {
   flex-wrap: wrap;
 }
 
-.tabs {
+/* ===== Tabs (เส้นใต้เลื่อนลื่น) ===== */
+.tabs-underline {
+  position: relative;
   display: flex;
-  gap: 6px;
+  gap: 4px;
   margin-top: 12px;
-  background: var(--color-pending-light);
-  padding: 4px;
-  border-radius: var(--radius-sm);
+  border-bottom: 1px solid var(--border);
   width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
-.tabs button {
+.tabs-underline button {
   border: none;
   background: transparent;
-  color: var(--color-text-muted);
+  box-shadow: none;
+  min-height: 40px;
+  padding: 8px 14px;
+  color: var(--text-muted);
+  font-size: 14px;
+  white-space: nowrap;
 }
 
-.tabs button.tab-active {
-  background: var(--color-surface);
-  color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
+.tabs-underline button:hover:not(:disabled) {
+  filter: none;
+  color: var(--text);
+}
+
+.tabs-underline button.tab-active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tabs-underline-bar {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: var(--glow-sm);
+  border-radius: var(--radius-pill);
+  transition: transform 280ms ease, width 280ms ease;
+}
+
+/* ===== League card grid (หน้ารวมลีค) ===== */
+.league-card-grid {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .league-card-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.league-card {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.league-card-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.league-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.league-card-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.league-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ===== Player count ring ===== */
+.player-ring {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.player-ring svg {
+  transform: rotate(-90deg);
+}
+
+.player-ring-track {
+  fill: none;
+  stroke: var(--surface-2);
+  stroke-width: 4;
+}
+
+.player-ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 400ms ease, stroke 200ms ease;
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+
+.player-ring-full .player-ring-fill {
+  stroke: var(--status-green);
+  filter: drop-shadow(0 0 4px var(--status-green));
+}
+
+.player-ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 .match-list-raw {

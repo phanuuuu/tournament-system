@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToLeagues, joinLeague, leaveLeague } from "../firebase/leagues";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import PlayerCountRing from "../components/PlayerCountRing";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
@@ -24,8 +25,15 @@ export default function LeagueListPage() {
   const [tab, setTab] = useState("open");
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState("");
+  const tabRefs = useRef({});
+  const [underline, setUnderline] = useState({ left: 0, width: 0 });
 
   useEffect(() => subscribeToLeagues(setLeagues), []);
+
+  useLayoutEffect(() => {
+    const el = tabRefs.current[tab];
+    if (el) setUnderline({ left: el.offsetLeft, width: el.offsetWidth });
+  }, [tab]);
 
   async function handleJoin(league) {
     setError("");
@@ -57,29 +65,33 @@ export default function LeagueListPage() {
     <div className="page">
       <h1>ลีคทั้งหมด</h1>
 
-      <nav className="tabs">
+      <nav className="tabs-underline">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
+            ref={(el) => (tabRefs.current[t.key] = el)}
             className={tab === t.key ? "tab-active" : ""}
             onClick={() => setTab(t.key)}
           >
             {t.label}
           </button>
         ))}
+        <span
+          className="tabs-underline-bar"
+          style={{ transform: `translateX(${underline.left}px)`, width: underline.width }}
+        />
       </nav>
 
       {error && <p className="form-error">{error}</p>}
 
       {leagues === null && (
-        <ul className="league-list">
+        <ul className="league-card-grid">
           {[0, 1, 2].map((i) => (
-            <li key={i}>
-              <span style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
-                <Skeleton width="60%" height="16px" />
-                <Skeleton width="45%" height="12px" />
-              </span>
+            <li key={i} className="league-card surface-glass">
+              <Skeleton width="50%" height="14px" />
+              <Skeleton width="70%" height="18px" />
+              <Skeleton width="40%" height="12px" />
             </li>
           ))}
         </ul>
@@ -87,31 +99,39 @@ export default function LeagueListPage() {
 
       {leagues !== null && filtered.length === 0 && <EmptyState {...EMPTY_BY_TAB[tab]} />}
 
-      <ul className="league-list">
+      <ul className="league-card-grid">
         {filtered.map((league) => {
           const joined = league.playerIds.includes(user.uid);
           const full = league.playerIds.length >= league.size;
+          const isCup = league.format === "cup";
 
           return (
-            <li key={league.id}>
-              <Link to={`/leagues/${league.id}`} className="league-card-info">
+            <li key={league.id} className="league-card surface-glass surface-glass-interactive">
+              <Link to={`/leagues/${league.id}`} className="league-card-link">
+                <div className="league-card-badges">
+                  <span className={`chip ${isCup ? "chip-accent" : "chip-accent-2"}`}>
+                    <span className="chip-dot" />
+                    {FORMAT_LABEL[league.format]}
+                  </span>
+                  <span className="chip">{MATCH_TYPE_LABEL[league.matchType]}</span>
+                </div>
                 <span className="league-card-title">{league.name}</span>
-                <span className="league-card-meta">
-                  {FORMAT_LABEL[league.format]} · {MATCH_TYPE_LABEL[league.matchType]} · {league.playerIds.length}/
-                  {league.size} คน
-                </span>
               </Link>
 
-              {tab === "open" && profile?.role !== "admin" && (
-                <button
-                  type="button"
-                  className={joined ? "btn-ghost btn-sm" : "btn-primary btn-sm"}
-                  disabled={busyId === league.id || (full && !joined)}
-                  onClick={() => (joined ? handleLeave(league) : handleJoin(league))}
-                >
-                  {joined ? "เข้าร่วมแล้ว (ออก)" : full ? "เต็มแล้ว" : "เข้าร่วม"}
-                </button>
-              )}
+              <div className="league-card-bottom">
+                <PlayerCountRing count={league.playerIds.length} size={league.size} />
+
+                {tab === "open" && profile?.role !== "admin" && (
+                  <button
+                    type="button"
+                    className={joined ? "btn-ghost btn-sm" : "btn-primary btn-sm"}
+                    disabled={busyId === league.id || (full && !joined)}
+                    onClick={() => (joined ? handleLeave(league) : handleJoin(league))}
+                  >
+                    {joined ? "เข้าร่วมแล้ว (ออก)" : full ? "เต็มแล้ว" : "เข้าร่วม"}
+                  </button>
+                )}
+              </div>
             </li>
           );
         })}
