@@ -673,10 +673,10 @@ button.btn-ghost:hover:not(:disabled) {
 .match-header {
   margin-top: 16px;
   padding: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-sm);
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--glow-sm);
 }
 
 .match-header-top {
@@ -684,6 +684,71 @@ button.btn-ghost:hover:not(:disabled) {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+/* ===== VS layout ===== */
+.match-vs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 16px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.match-vs-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.match-vs-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-strong);
+  box-shadow: var(--glow-sm);
+}
+
+.match-vs-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.match-vs-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-vs-status {
+  font-size: 10px;
+  padding: 2px 8px;
+}
+
+.match-vs-versus {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .match-actions {
@@ -703,13 +768,13 @@ button.btn-ghost:hover:not(:disabled) {
 .submission-compare {
   margin-top: 10px;
   font-size: 14px;
-  background: var(--color-bg);
+  background: var(--surface-2);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
 }
 
 .submission-compare p {
-  color: var(--color-text);
+  color: var(--text);
 }
 
 .checkbox-label {
@@ -724,7 +789,99 @@ button.btn-ghost:hover:not(:disabled) {
 
 .hint-text {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--text-muted);
+}
+
+.match-hint {
+  display: block;
+  width: fit-content;
+}
+
+/* ===== Score stepper ===== */
+.score-stepper-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+}
+
+.score-stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.score-stepper-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.score-stepper-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.score-stepper-btn {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.score-stepper-input {
+  width: 56px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  padding: 8px 4px;
+}
+
+.score-stepper-divider {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-muted);
+  padding-bottom: 10px;
+  flex-shrink: 0;
+}
+
+/* ===== กล่องจุดโทษ — สไลด์โผล่มาตอนสกอร์เสมอ (ใช้ max-height เพราะ height:auto สั้นยาวต่างกันตามเนื้อหา
+   transform/opacity ล้วนทำ "reveal" แบบนี้ไม่ได้ จึงเป็นข้อยกเว้นที่ตั้งใจ คล้ายกับ skeleton/theme-transition) ===== */
+.penalty-box {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 320ms ease, opacity 280ms ease;
+}
+
+.penalty-box-open {
+  max-height: 220px;
+  opacity: 1;
+  margin-top: 4px;
+}
+
+.penalty-fields {
+  display: none;
+}
+
+.penalty-fields-open {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .penalty-box {
+    transition: none;
+  }
 }
 
 /* ===== Status badges ===== */

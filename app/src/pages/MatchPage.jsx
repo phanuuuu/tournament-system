@@ -8,12 +8,23 @@ import { submitMatchResult } from "../firebase/matchSubmission";
 import { uploadMatchPhoto } from "../firebase/storageHelpers";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { functions } from "../firebase/config";
+import { useToast } from "../context/ToastContext";
 import StatusBadge from "../components/StatusBadge";
 import Spinner from "../components/Spinner";
+import ScoreStepper from "../components/ScoreStepper";
+
+function Avatar({ photoURL, name }) {
+  return photoURL ? (
+    <img src={photoURL} alt={name} className="match-vs-avatar" />
+  ) : (
+    <span className="match-vs-avatar match-vs-avatar-fallback">{name?.[0] ?? "?"}</span>
+  );
+}
 
 export default function MatchPage() {
   const { matchId } = useParams();
   const { user, profile } = useAuth();
+  const showToast = useToast();
   const [match, setMatch] = useState(undefined);
   const [league, setLeague] = useState(undefined);
   const [myScore, setMyScore] = useState("");
@@ -23,7 +34,6 @@ export default function MatchPage() {
   const [oppPenalty, setOppPenalty] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [contactInfo, setContactInfo] = useState(null);
   const [overrideHome, setOverrideHome] = useState("");
@@ -68,8 +78,7 @@ export default function MatchPage() {
 
   async function handleCopyCode() {
     await navigator.clipboard.writeText(match.matchCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    showToast("คัดลอกรหัสแล้ว", "success");
   }
 
   async function handleContactOpponent() {
@@ -113,6 +122,7 @@ export default function MatchPage() {
     }
     try {
       await adminOverrideResult(matchId, { scoreHome: sH, scoreAway: sA, penaltyHome: pH, penaltyAway: pA });
+      showToast("บันทึกผลแล้ว", "success");
     } catch (err) {
       setError(err.message);
     }
@@ -131,7 +141,7 @@ export default function MatchPage() {
     let penaltyMine = null;
     let penaltyOpp = null;
     if (needsPenalty && isTied) {
-      if (!usePenalty) return setError("สกอร์เสมอ ต้องติ๊ก \"เข้าสู่การยิงจุดโทษ\" และกรอกผล");
+      if (!usePenalty) return setError('สกอร์เสมอ ต้องติ๊ก "เข้าสู่การยิงจุดโทษ" และกรอกผล');
       penaltyMine = Number(myPenalty);
       penaltyOpp = Number(oppPenalty);
       if (!Number.isInteger(penaltyMine) || penaltyMine < 0 || !Number.isInteger(penaltyOpp) || penaltyOpp < 0) {
@@ -154,6 +164,7 @@ export default function MatchPage() {
         penaltyAway: penaltyMine == null ? null : isHome ? penaltyOpp : penaltyMine,
         photoURL,
       });
+      showToast("ส่งผลแล้ว", "success");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -161,16 +172,23 @@ export default function MatchPage() {
     }
   }
 
-  if (match === undefined || league === undefined) return <div className="page-loader"><Spinner size="lg" /></div>;
+  if (match === undefined || league === undefined)
+    return (
+      <div className="page-loader">
+        <Spinner size="lg" />
+      </div>
+    );
   if (match === null) return <p>ไม่พบแมตช์นี้</p>;
 
   const opponentName = profiles[opponentUid]?.displayName ?? "...";
+  const myName = profile?.displayName ?? "ฉัน";
   const mySubmission = match.submissions?.[user.uid];
   const opponentSubmission = opponentUid ? match.submissions?.[opponentUid] : null;
   const editable = isParticipant && match.status !== "approved" && match.status !== "walkover";
   const canUseContactButton = league?.format === "cup" && match.kind === "regular" && isParticipant;
   const iAmUnreachableFlag = !!match.contactUnreachable?.[user.uid];
   const isAdmin = profile?.role === "admin";
+  const showPenaltyBox = needsPenalty && isTied;
 
   return (
     <div className="page">
@@ -180,7 +198,7 @@ export default function MatchPage() {
         <div className="match-header-top">
           <code>{match.matchCode}</code>
           <button type="button" className="btn-ghost btn-sm" onClick={handleCopyCode}>
-            {copied ? "คัดลอกแล้ว" : "คัดลอกรหัส"}
+            คัดลอกรหัส
           </button>
           <StatusBadge status={match.status} />
         </div>
@@ -189,8 +207,23 @@ export default function MatchPage() {
           {match.round != null && <> · รอบ {match.round}</>}
           {match.leg != null && <> · นัดที่ {match.leg}</>}
         </p>
-        {isParticipant && <p>คู่แข่ง: {opponentName}</p>}
       </div>
+
+      {isParticipant && (
+        <div className="match-vs">
+          <div className="match-vs-side">
+            <Avatar photoURL={profile?.photoURL} name={myName} />
+            <span className="match-vs-name">{myName}</span>
+            {mySubmission && <span className="chip chip-accent match-vs-status">ส่งผลแล้ว</span>}
+          </div>
+          <span className="match-vs-versus">VS</span>
+          <div className="match-vs-side">
+            <Avatar photoURL={profiles[opponentUid]?.photoURL} name={opponentName} />
+            <span className="match-vs-name">{opponentName}</span>
+            {opponentSubmission && <span className="chip chip-accent-2 match-vs-status">ส่งผลแล้ว</span>}
+          </div>
+        </div>
+      )}
 
       {isParticipant && (
         <div className="match-actions">
@@ -213,7 +246,10 @@ export default function MatchPage() {
         <div className="match-result-banner status-green">
           ผลอนุมัติแล้ว: {match.approvedResult.scoreHome} - {match.approvedResult.scoreAway}
           {match.approvedResult.penaltyHome != null && (
-            <> (จุดโทษ {match.approvedResult.penaltyHome}-{match.approvedResult.penaltyAway})</>
+            <>
+              {" "}
+              (จุดโทษ {match.approvedResult.penaltyHome}-{match.approvedResult.penaltyAway})
+            </>
           )}
         </div>
       )}
@@ -240,34 +276,23 @@ export default function MatchPage() {
       {editable && (
         <form onSubmit={handleSubmit}>
           <h2>ส่งผล</h2>
-          <label>
-            สกอร์ของฉัน
-            <input type="number" min={0} value={myScore} onChange={(e) => setMyScore(e.target.value)} required />
-          </label>
-          <label>
-            สกอร์คู่แข่ง
-            <input type="number" min={0} value={oppScore} onChange={(e) => setOppScore(e.target.value)} required />
-          </label>
+          <div className="score-stepper-row">
+            <ScoreStepper label="สกอร์ของฉัน" value={myScore} onChange={setMyScore} />
+            <span className="score-stepper-divider">:</span>
+            <ScoreStepper label="สกอร์คู่แข่ง" value={oppScore} onChange={setOppScore} />
+          </div>
 
-          {needsPenalty && isTied && (
-            <>
+          {needsPenalty && (
+            <div className={`penalty-box ${showPenaltyBox ? "penalty-box-open" : ""}`}>
               <label className="checkbox-label">
                 <input type="checkbox" checked={usePenalty} onChange={(e) => setUsePenalty(e.target.checked)} />
                 เข้าสู่การยิงจุดโทษ
               </label>
-              {usePenalty && (
-                <>
-                  <label>
-                    จุดโทษของฉัน
-                    <input type="number" min={0} value={myPenalty} onChange={(e) => setMyPenalty(e.target.value)} />
-                  </label>
-                  <label>
-                    จุดโทษคู่แข่ง
-                    <input type="number" min={0} value={oppPenalty} onChange={(e) => setOppPenalty(e.target.value)} />
-                  </label>
-                </>
-              )}
-            </>
+              <div className={`penalty-fields ${usePenalty ? "penalty-fields-open" : ""}`}>
+                <ScoreStepper label="จุดโทษของฉัน" value={myPenalty} onChange={setMyPenalty} />
+                <ScoreStepper label="จุดโทษคู่แข่ง" value={oppPenalty} onChange={setOppPenalty} />
+              </div>
+            </div>
           )}
 
           <label>
@@ -275,12 +300,17 @@ export default function MatchPage() {
             <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
           </label>
 
-          {!mySubmission && opponentSubmission && <p className="hint-text">คู่แข่งส่งผลแล้ว รอคุณยืนยัน</p>}
-          {mySubmission && !opponentSubmission && <p className="hint-text">ส่งผลแล้ว รอคู่แข่งยืนยัน</p>}
+          {!mySubmission && opponentSubmission && (
+            <p className="status-badge status-yellow match-hint">คู่แข่งส่งผลแล้ว รอคุณยืนยัน</p>
+          )}
+          {mySubmission && !opponentSubmission && (
+            <p className="status-badge status-yellow match-hint">ส่งผลแล้ว รอคู่แข่งยืนยัน</p>
+          )}
 
           <p className="hint-text">แก้ไขได้จนกว่าผลจะถูกอนุมัติ</p>
 
           <button type="submit" disabled={submitting}>
+            {submitting && <Spinner size="sm" />}
             {submitting ? "กำลังส่ง..." : mySubmission ? "แก้ไขผล" : "ส่งผล"}
           </button>
         </form>
@@ -289,32 +319,25 @@ export default function MatchPage() {
       {isAdmin && (match.status === "approved" || match.status === "walkover") && (
         <form onSubmit={handleAdminOverride}>
           <h2>แก้ไขผลโดยตรง (แอดมิน)</h2>
-          <label>
-            สกอร์ {profiles[match.players.home]?.displayName} (เหย้า)
-            <input type="number" min={0} value={overrideHome} onChange={(e) => setOverrideHome(e.target.value)} />
-          </label>
-          <label>
-            สกอร์ {profiles[match.players.away]?.displayName} (เยือน)
-            <input type="number" min={0} value={overrideAway} onChange={(e) => setOverrideAway(e.target.value)} />
-          </label>
-          <label>
-            จุดโทษเหย้า (กรอกถ้าสกอร์เสมอ)
-            <input
-              type="number"
-              min={0}
-              value={overridePenHome}
-              onChange={(e) => setOverridePenHome(e.target.value)}
+          <div className="score-stepper-row">
+            <ScoreStepper
+              label={`สกอร์ ${profiles[match.players.home]?.displayName ?? ""} (เหย้า)`}
+              value={overrideHome}
+              onChange={setOverrideHome}
             />
-          </label>
-          <label>
-            จุดโทษเยือน (กรอกถ้าสกอร์เสมอ)
-            <input
-              type="number"
-              min={0}
-              value={overridePenAway}
-              onChange={(e) => setOverridePenAway(e.target.value)}
+            <span className="score-stepper-divider">:</span>
+            <ScoreStepper
+              label={`สกอร์ ${profiles[match.players.away]?.displayName ?? ""} (เยือน)`}
+              value={overrideAway}
+              onChange={setOverrideAway}
             />
-          </label>
+          </div>
+          <p className="hint-text">กรอกจุดโทษด้านล่างด้วย ถ้าสกอร์เสมอ</p>
+          <div className="score-stepper-row">
+            <ScoreStepper label="จุดโทษเหย้า" value={overridePenHome} onChange={setOverridePenHome} />
+            <span className="score-stepper-divider">:</span>
+            <ScoreStepper label="จุดโทษเยือน" value={overridePenAway} onChange={setOverridePenAway} />
+          </div>
           <button type="submit" className="btn-ghost">
             บันทึกผล
           </button>
