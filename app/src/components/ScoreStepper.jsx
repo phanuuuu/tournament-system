@@ -1,4 +1,4 @@
-export default function ScoreStepper({ label, value, onChange, disabled }) {
+export default function ScoreStepper({ label, value, onChange, disabled, required }) {
   const num = value === "" ? null : Number(value);
 
   function step(delta) {
@@ -27,7 +27,7 @@ export default function ScoreStepper({ label, value, onChange, disabled }) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          required
+          required={required}
         />
         <button
           type="button"

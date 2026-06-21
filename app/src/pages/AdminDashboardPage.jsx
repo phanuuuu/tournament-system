@@ -32,7 +32,11 @@ export default function AdminDashboardPage() {
 
       <Link to="/admin/disputes" className="dashboard-card">
         <span>ต้องลงมือ</span>
-        <span className={actionCount > 0 ? "dashboard-number-alert" : "dashboard-number"}>{actionCount}</span>
+        {actionCount > 0 ? (
+          <span className="alert-badge alert-badge-pulse">{actionCount}</span>
+        ) : (
+          <span className="dashboard-number">{actionCount}</span>
+        )}
       </Link>
 
       <div className="dashboard-subitems">

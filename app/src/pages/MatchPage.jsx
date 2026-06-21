@@ -277,9 +277,9 @@ export default function MatchPage() {
         <form onSubmit={handleSubmit}>
           <h2>ส่งผล</h2>
           <div className="score-stepper-row">
-            <ScoreStepper label="สกอร์ของฉัน" value={myScore} onChange={setMyScore} />
+            <ScoreStepper label="สกอร์ของฉัน" value={myScore} onChange={setMyScore} required />
             <span className="score-stepper-divider">:</span>
-            <ScoreStepper label="สกอร์คู่แข่ง" value={oppScore} onChange={setOppScore} />
+            <ScoreStepper label="สกอร์คู่แข่ง" value={oppScore} onChange={setOppScore} required />
           </div>
 
           {needsPenalty && (

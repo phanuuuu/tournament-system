@@ -18,6 +18,11 @@ const ACTION_LABEL = {
   play: "ถึงรอบแข่งของคุณแล้ว",
 };
 
+const ACTION_ICON = { confirm: "📝", replay: "🔁", play: "▶️" };
+
+// เรียงตามความเร่งด่วน: รอยืนยัน/แข่งใหม่ (แอดมินหรือคู่แข่งรออยู่) ก่อนแค่ "ถึงตาแข่ง" (ยังไม่มีใครรอ)
+const PRIORITY = { confirm: 0, replay: 0, play: 1 };
+
 export default function HomePage() {
   const { user, profile } = useAuth();
   const [leagues, setLeagues] = useState(null);
@@ -27,6 +32,7 @@ export default function HomePage() {
   const leagueIds = leagues?.map((l) => l.id) ?? [];
   const matchesByLeague = useMatchesByLeagues(leagueIds);
   const actionItems = leagues ? getActionItems(user.uid, leagues, matchesByLeague) : [];
+  const sortedActionItems = [...actionItems].sort((a, b) => PRIORITY[a.type] - PRIORITY[b.type]);
 
   return (
     <div className="page">
@@ -38,11 +44,19 @@ export default function HomePage() {
         <EmptyState compact icon="🎉" title="ไม่มีอะไรต้องทำตอนนี้" subtitle="พักได้ รอคู่แข่งบ้าง" />
       )}
       <ul className="action-list">
-        {actionItems.map(({ type, league, match }) => (
+        {sortedActionItems.map(({ type, league, match }) => (
           <li key={match.id}>
-            <Link to={`/matches/${match.id}`} className="action-item">
-              <span>
-                <strong>{league.name}</strong> — {ACTION_LABEL[type]}
+            <Link
+              to={`/matches/${match.id}`}
+              className={`action-item ${PRIORITY[type] === 0 ? "action-item-urgent" : ""}`}
+            >
+              <span className="action-item-text">
+                <span className="action-item-icon" aria-hidden="true">
+                  {ACTION_ICON[type]}
+                </span>
+                <span>
+                  <strong>{league.name}</strong> — {ACTION_LABEL[type]}
+                </span>
               </span>
               <code>{match.matchCode}</code>
             </Link>
@@ -76,6 +90,11 @@ export default function HomePage() {
   );
 }
 
+function RankChip({ rank }) {
+  const tier = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "";
+  return <span className={`rank-chip ${tier && `rank-chip-${tier}`}`}>#{rank}</span>;
+}
+
 function MyLeagueCard({ league, matches, uid }) {
   const myMatches = matches.filter((m) => m.kind === "regular" && (m.players.home === uid || m.players.away === uid));
   const playedCount = myMatches.filter((m) => m.status === "approved" || m.status === "walkover").length;
@@ -83,23 +102,39 @@ function MyLeagueCard({ league, matches, uid }) {
   const profiles = usePublicProfiles(opponentUids);
 
   let summary;
+  let myRank = null;
   if (league.status === "open") {
     summary = "รอลีคเริ่ม";
   } else if (league.format === "points") {
     const standings = computeStandings(league.playerIds, matches, {});
     const myRow = standings.find((r) => r.uid === uid);
-    summary = myRow ? `อันดับ ${myRow.rank} · ${myRow.points} แต้ม` : "-";
+    summary = myRow ? `${myRow.points} แต้ม` : "-";
+    myRank = myRow?.rank ?? null;
   } else {
     summary = getCupStatus(uid, league, matches);
   }
 
+  const totalMatches = myMatches.length;
+  const progressPct = totalMatches > 0 ? Math.round((playedCount / totalMatches) * 100) : 0;
+
   return (
     <details className="my-league-card">
       <summary>
-        <span className="league-card-title">{league.name}</span>
-        <span className="league-card-meta">
-          {FORMAT_LABEL[league.format]} · {summary} · เล่นแล้ว {playedCount}/{myMatches.length}
-        </span>
+        <div className="my-league-card-top">
+          <span className="league-card-title">{league.name}</span>
+          {myRank != null && <RankChip rank={myRank} />}
+        </div>
+        <span className="league-card-meta">{FORMAT_LABEL[league.format]} · {summary}</span>
+        {totalMatches > 0 && (
+          <>
+            <div className="my-league-progress-track">
+              <div className="my-league-progress-fill" style={{ width: `${progressPct}%` }} />
+            </div>
+            <span className="league-card-meta">
+              เล่นแล้ว {playedCount}/{totalMatches}
+            </span>
+          </>
+        )}
       </summary>
       <ul className="my-match-list">
         {myMatches.map((m) => {
