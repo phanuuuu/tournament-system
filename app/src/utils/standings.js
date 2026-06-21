@@ -29,6 +29,13 @@ function tiebreakerKey(uidA, uidB) {
   return [uidA, uidB].sort().join("|");
 }
 
+// แมตช์นับว่า "จบแล้ว" ถ้ามีผลอนุมัติ/ชนะบาย หรือถูกมองทะลุด้วยแพ้บัน (byeBan เขียนทับผลตอนคำนวณ
+// โดยไม่แตะ status ของแมตช์เดิมเลย ถ้าไม่เช็กเงื่อนไขนี้ด้วย แมตช์ที่มีคนแพ้บันจะค้างเป็น "ยังไม่จบ" ตลอดไป)
+function isRegularMatchSettled(m, byeBans) {
+  if (m.status === "approved" || m.status === "walkover") return true;
+  return !!(byeBans[m.players.home]?.active || byeBans[m.players.away]?.active);
+}
+
 export function computeStandings(playerIds, matches, byeBans = {}) {
   const stats = {};
   for (const uid of playerIds) stats[uid] = emptyStats(uid);
@@ -59,6 +66,12 @@ export function computeStandings(playerIds, matches, byeBans = {}) {
   }));
 
   rows.sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
+
+  // ยังไม่ควรเตือนให้จัดแมตช์ตัดสินถ้าฤดูกาลยังแข่งไม่ครบ (ไม่งั้นพอลีคเพิ่งเริ่ม ทุกคนแต้ม/ลูกเท่ากันเป๊ะ
+  // จะโดนเตือนให้จัดตัดสินทุกคู่ทันทีทั้งที่ยังไม่ได้แข่งกันเลย)
+  const seasonComplete = matches
+    .filter((m) => m.kind === "regular")
+    .every((m) => isRegularMatchSettled(m, byeBans));
 
   // หาผู้ชนะแมตช์ตัดสิน (tiebreaker) ที่อนุมัติแล้ว ใช้จัดลำดับคู่ที่เท่ากันเป๊ะให้ตรงผลจริง
   const tiebreakerWinner = {};
@@ -100,7 +113,7 @@ export function computeStandings(playerIds, matches, byeBans = {}) {
         ...row,
         rank: fullyResolved ? rank + idx : rank,
         tied: group.length > 1,
-        stillTied: group.length > 1 && !fullyResolved,
+        stillTied: group.length > 1 && !fullyResolved && seasonComplete,
       });
     });
 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { createLeague, isValidLeagueSize } from "../firebase/leagues";
+import Spinner from "../components/Spinner";
 
 const CUP_SIZES = [4, 8, 16, 32, 64];
 
@@ -111,6 +112,7 @@ export default function AdminCreateLeaguePage() {
         {error && <p className="form-error">{error}</p>}
 
         <button type="submit" disabled={submitting}>
+          {submitting && <Spinner size="sm" />}
           {submitting ? "กำลังสร้าง..." : "สร้างลีค"}
         </button>
       </form>
