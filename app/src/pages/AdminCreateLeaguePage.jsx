@@ -75,14 +75,14 @@ export default function AdminCreateLeaguePage() {
 
         {format === "points" && (
           <label>
-            รูปแบบนัด *
+            รูปแบบแมตช์ *
             <select value={matchType} onChange={(e) => setMatchType(e.target.value)}>
-              <option value="single">นัดเดียว</option>
+              <option value="single">แมตช์เดียว</option>
               <option value="homeAway">เหย้า-เยือน</option>
             </select>
           </label>
         )}
-        {format === "cup" && <p>ถ้วยแข่งนัดเดียวเสมอ</p>}
+        {format === "cup" && <p>ถ้วยแข่งแมตช์เดียวเสมอ</p>}
 
         {format === "cup" ? (
           <label>

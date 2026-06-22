@@ -24,7 +24,7 @@ export function getActionItems(uid, leagues, matchesByLeague) {
 
 const MAX_NON_URGENT_REMINDERS = 3;
 
-// เตือนนัดลีคเก็บแต้มที่ยังไม่ได้แข่งเลย (ไม่ใช่ urgent) — เลือกนัดที่ค้างนานสุดต่อลีคแบบ deterministic
+// เตือนแมตช์ลีคเก็บแต้มที่ยังไม่ได้แข่งเลย (ไม่ใช่ urgent) — เลือกแมตช์ที่ค้างนานสุดต่อลีคแบบ deterministic
 // (เทียบ createdAt เก่าสุด) จะได้ผลลัพธ์เดิมทุกครั้งที่ render ไม่ใช่สุ่มเปลี่ยนไปมา, จำกัดรวมไม่เกิน 3 รายการ
 export function getNonUrgentReminders(uid, leagues, matchesByLeague) {
   const candidates = [];

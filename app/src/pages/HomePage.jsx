@@ -93,7 +93,7 @@ export default function HomePage() {
                   📅
                 </span>
                 <span>
-                  <strong>{league.name}</strong> — ยังมีนัดให้แข่ง <span className="action-item-tag">ไม่ด่วน</span>
+                  <strong>{league.name}</strong> — ยังมีแมตช์ให้แข่ง <span className="action-item-tag">ไม่ด่วน</span>
                 </span>
               </span>
               <code>{match.matchCode}</code>
@@ -198,7 +198,7 @@ function MyLeagueCard({ league, matches, uid }) {
         </>
       )}
       <details className="my-league-card-details">
-        <summary>ดูนัดทั้งหมด</summary>
+        <summary>ดูแมตช์ทั้งหมด</summary>
         <ul className="my-match-list">
           {myMatches.map((m) => {
             const oppUid = m.players.home === uid ? m.players.away : m.players.home;

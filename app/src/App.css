@@ -756,7 +756,7 @@ button.btn-ghost:hover:not(:disabled) {
   }
 }
 
-/* นัดลีคเก็บแต้มที่ยังไม่ได้แข่ง — ไม่ด่วน ใช้โทนเย็น (accent) ไม่กระพริบ ให้ต่างจากของเร่งด่วนชัด ๆ */
+/* แมตช์ลีคเก็บแต้มที่ยังไม่ได้แข่ง — ไม่ด่วน ใช้โทนเย็น (accent) ไม่กระพริบ ให้ต่างจากของเร่งด่วนชัด ๆ */
 .action-item-relaxed {
   background: var(--surface-2);
   border-color: var(--border);

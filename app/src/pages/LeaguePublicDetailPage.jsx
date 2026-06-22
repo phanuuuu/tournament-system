@@ -9,7 +9,7 @@ import LeagueResultsView from "../components/LeagueResultsView";
 import Spinner from "../components/Spinner";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
-const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
+const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
 const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "กำลังแข่ง", finished: "จบแล้ว" };
 const STATUS_COLOR = { open: "yellow", ongoing: "green", finished: "gray" };
 

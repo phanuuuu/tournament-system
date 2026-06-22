@@ -8,7 +8,7 @@ import PlayerCountRing from "../components/PlayerCountRing";
 import Spinner from "../components/Spinner";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
-const MATCH_TYPE_LABEL = { single: "นัดเดียว", homeAway: "เหย้า-เยือน" };
+const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
 const TABS = [
   { key: "open", label: "เปิดรับสมัคร" },
   { key: "ongoing", label: "กำลังแข่ง" },

@@ -17,7 +17,7 @@ export default function MatchListRaw({ matches, profiles, bracketSize }) {
               <span>
                 <code>{m.matchCode}</code> — {nameOf(m.players.home)} vs {nameOf(m.players.away)}
                 {m.round != null && <> ({roundLabel(bracketSize, m.round)})</>}
-                {m.leg != null && <> (นัดที่ {m.leg})</>}
+                {m.leg != null && <> (แมตช์ที่ {m.leg})</>}
               </span>
               <StatusBadge status={m.status} />
             </Link>

@@ -228,7 +228,7 @@ export async function revertLatestRound(league) {
   await batch.commit();
 }
 
-// แอดมินแก้ไขผลที่อนุมัติไปแล้วโดยตรง (ใช้คู่กับย้อนรอบล่าสุด หรือแก้ผลนัดชิงหลังลีคจบไปแล้ว)
+// แอดมินแก้ไขผลที่อนุมัติไปแล้วโดยตรง (ใช้คู่กับย้อนรอบล่าสุด หรือแก้ผลแมตช์ชิงหลังลีคจบไปแล้ว)
 export async function adminOverrideResult(matchId, { scoreHome, scoreAway, penaltyHome, penaltyAway }) {
   await updateDoc(doc(db, "matches", matchId), {
     status: "approved",

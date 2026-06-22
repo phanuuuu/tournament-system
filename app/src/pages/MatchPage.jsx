@@ -228,7 +228,7 @@ export default function MatchPage() {
         <p>
           {league?.name}
           {match.round != null && <> · {roundLabel(league?.size, match.round)}</>}
-          {match.leg != null && <> · นัดที่ {match.leg}</>}
+          {match.leg != null && <> · แมตช์ที่ {match.leg}</>}
         </p>
       </div>
 
