@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   subscribeToLeague,
   startLeague,
@@ -14,6 +14,7 @@ import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { useAuth } from "../context/AuthContext";
 import LeagueResultsView from "../components/LeagueResultsView";
 import Spinner from "../components/Spinner";
+import BackLink from "../components/BackLink";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
@@ -100,7 +101,7 @@ export default function AdminLeagueDetailPage() {
 
   return (
     <div className="page-wide">
-      <Link to="/admin/leagues">← ลีคทั้งหมด</Link>
+      <BackLink to="/admin/leagues">ลีคทั้งหมด</BackLink>
       <h1>{league.name}</h1>
       <p>
         {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) ·{" "}

@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function StandingsTable({ standings, profiles, isAdmin, onCreateTiebreaker }) {
@@ -89,7 +90,11 @@ export default function StandingsTable({ standings, profiles, isAdmin, onCreateT
                 <td>
                   <span className="rank-cell">
                     {row.rank}
-                    {arrow && <span className={`rank-arrow rank-arrow-${arrow}`}>{arrow === "up" ? "▲" : "▼"}</span>}
+                    {arrow && (
+                      <span className={`rank-arrow rank-arrow-${arrow}`}>
+                        {arrow === "up" ? <ArrowUp size={11} /> : <ArrowDown size={11} />}
+                      </span>
+                    )}
                   </span>
                 </td>
                 <td>{profiles[row.uid]?.displayName ?? "..."}</td>

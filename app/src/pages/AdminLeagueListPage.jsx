@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { subscribeToLeagues } from "../firebase/leagues";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import { Trophy } from "lucide-react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "กำลังแข่ง", finished: "จบแล้ว" };
@@ -33,7 +34,7 @@ export default function AdminLeagueListPage() {
         </ul>
       )}
 
-      {leagues?.length === 0 && <EmptyState icon="🏆" title="ยังไม่มีลีค" subtitle="กดสร้างลีคใหม่เพื่อเริ่มการแข่งขัน" />}
+      {leagues?.length === 0 && <EmptyState icon={Trophy} title="ยังไม่มีลีค" subtitle="กดสร้างลีคใหม่เพื่อเริ่มการแข่งขัน" />}
 
       <ul className="league-list">
         {leagues?.map((league) => (

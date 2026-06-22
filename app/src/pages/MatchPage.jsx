@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { httpsCallable } from "firebase/functions";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMatch, toggleContactUnreachable, adminOverrideResult } from "../firebase/matches";
@@ -13,6 +13,7 @@ import StatusBadge from "../components/StatusBadge";
 import Spinner from "../components/Spinner";
 import ScoreStepper from "../components/ScoreStepper";
 import { roundLabel } from "../utils/roundLabel";
+import BackLink from "../components/BackLink";
 
 function Avatar({ photoURL, name }) {
   return photoURL ? (
@@ -215,7 +216,7 @@ export default function MatchPage() {
 
   return (
     <div className="page">
-      <Link to={`/leagues/${match.leagueId}`}>← กลับลีค</Link>
+      <BackLink to={`/leagues/${match.leagueId}`}>กลับลีค</BackLink>
 
       <div className="match-header">
         <div className="match-header-top">

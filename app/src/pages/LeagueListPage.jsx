@@ -6,6 +6,7 @@ import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import PlayerCountRing from "../components/PlayerCountRing";
 import Spinner from "../components/Spinner";
+import { Inbox, Hourglass, Flag } from "lucide-react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
@@ -15,9 +16,9 @@ const TABS = [
   { key: "finished", label: "จบแล้ว" },
 ];
 const EMPTY_BY_TAB = {
-  open: { icon: "📭", title: "ยังไม่มีลีคเปิดรับสมัคร", subtitle: "รอแอดมินสร้างลีคใหม่ได้เลย" },
-  ongoing: { icon: "⏳", title: "ไม่มีลีคที่กำลังแข่งอยู่ตอนนี้" },
-  finished: { icon: "🏁", title: "ยังไม่มีลีคที่จบแล้ว" },
+  open: { icon: Inbox, title: "ยังไม่มีลีคเปิดรับสมัคร", subtitle: "รอแอดมินสร้างลีคใหม่ได้เลย" },
+  ongoing: { icon: Hourglass, title: "ไม่มีลีคที่กำลังแข่งอยู่ตอนนี้" },
+  finished: { icon: Flag, title: "ยังไม่มีลีคที่จบแล้ว" },
 };
 
 export default function LeagueListPage() {

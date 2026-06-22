@@ -12,6 +12,8 @@ import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Spinner from "../components/Spinner";
+import BackLink from "../components/BackLink";
+import { ShieldCheck, Phone, Camera } from "lucide-react";
 
 export default function AdminDisputesPage() {
   const navigate = useNavigate();
@@ -86,7 +88,7 @@ export default function AdminDisputesPage() {
 
   return (
     <div className="page">
-      <Link to="/admin/leagues">← จัดการลีค</Link>
+      <BackLink to="/admin/leagues">จัดการลีค</BackLink>
       <h1>ข้อพิพาทและคำขอ</h1>
 
       <form onSubmit={handleSearch} className="inline-search-form">
@@ -104,7 +106,7 @@ export default function AdminDisputesPage() {
 
       <h2>ข้อพิพาท (สกอร์ไม่ตรง)</h2>
       {matches === null && <Skeleton width="100%" height="80px" radius="14px" />}
-      {matches?.length === 0 && <EmptyState compact icon="🕊️" title="ไม่มีข้อพิพาทตอนนี้" />}
+      {matches?.length === 0 && <EmptyState compact icon={ShieldCheck} title="ไม่มีข้อพิพาทตอนนี้" />}
 
       <ul className="dispute-list">
         {matches?.map((m) => {
@@ -119,7 +121,7 @@ export default function AdminDisputesPage() {
                 <span>
                   {profiles[m.players.home]?.displayName}: <strong>{home.scoreHome}-{home.scoreAway}</strong>
                   {home.penaltyHome != null && <> (จุดโทษ {home.penaltyHome}-{home.penaltyAway})</>}{" "}
-                  {home.photoURL ? "📷" : ""}
+                  {home.photoURL ? <Camera size={14} className="inline-icon" aria-label="มีรูปแนบ" /> : ""}
                 </span>
                 <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.home)}>
                   {busyId === m.id && <Spinner size="sm" />} ใช้ผลนี้
@@ -129,7 +131,7 @@ export default function AdminDisputesPage() {
                 <span>
                   {profiles[m.players.away]?.displayName}: <strong>{away.scoreHome}-{away.scoreAway}</strong>
                   {away.penaltyHome != null && <> (จุดโทษ {away.penaltyHome}-{away.penaltyAway})</>}{" "}
-                  {away.photoURL ? "📷" : ""}
+                  {away.photoURL ? <Camera size={14} className="inline-icon" aria-label="มีรูปแนบ" /> : ""}
                 </span>
                 <button type="button" className="btn-ghost btn-sm" disabled={busyId === m.id} onClick={() => handleUseSubmission(m.id, m.players.away)}>
                   {busyId === m.id && <Spinner size="sm" />} ใช้ผลนี้
@@ -145,7 +147,7 @@ export default function AdminDisputesPage() {
 
       <h2>ติดต่อคู่แข่งไม่ได้ (ถ้วย)</h2>
       {contactIssues === null && <Skeleton width="100%" height="80px" radius="14px" />}
-      {contactIssues?.length === 0 && <EmptyState compact icon="📞" title="ไม่มีคิวตอนนี้" />}
+      {contactIssues?.length === 0 && <EmptyState compact icon={Phone} title="ไม่มีคิวตอนนี้" />}
       <ul className="dispute-list">
         {contactIssues?.map((m) => (
           <li key={m.id} className="dispute-card">

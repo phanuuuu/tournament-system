@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ClipboardCheck, RotateCcw, Play, Calendar, PartyPopper, Gamepad2, Trophy, User, ChevronRight } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMyLeagues } from "../firebase/leagues";
 import { useMatchesByLeagues } from "../hooks/useMatchesByLeagues";
@@ -18,7 +19,7 @@ const ACTION_LABEL = {
   play: "ถึงรอบแข่งของคุณแล้ว",
 };
 
-const ACTION_ICON = { confirm: "📝", replay: "🔁", play: "▶️" };
+const ACTION_ICON = { confirm: ClipboardCheck, replay: RotateCcw, play: Play };
 
 // เรียงตามความเร่งด่วน: รอยืนยัน/แข่งใหม่ (แอดมินหรือคู่แข่งรออยู่) ก่อนแค่ "ถึงตาแข่ง" (ยังไม่มีใครรอ)
 const PRIORITY = { confirm: 0, replay: 0, play: 1 };
@@ -28,7 +29,7 @@ const CUP_STATUS_SHORT = {
   pending: "รอผล",
   advancing: "ผ่านเข้ารอบ",
   eliminated: "ตกรอบ",
-  champion: "แชมป์ 🏆",
+  champion: "แชมป์",
 };
 
 function Avatar({ photoURL, name, className = "home-avatar" }) {
@@ -64,33 +65,36 @@ export default function HomePage() {
       <h2>ต้องทำต่อ</h2>
       {leagues === null && <Skeleton width="100%" height="48px" radius="12px" />}
       {leagues !== null && nothingToDo && (
-        <EmptyState compact icon="🎉" title="ไม่มีอะไรต้องทำตอนนี้" subtitle="พักได้ รอคู่แข่งบ้าง" />
+        <EmptyState compact icon={PartyPopper} title="ไม่มีอะไรต้องทำตอนนี้" subtitle="พักได้ รอคู่แข่งบ้าง" />
       )}
       <ul className="action-list">
-        {sortedActionItems.map(({ type, league, match }) => (
-          <li key={match.id}>
-            <Link
-              to={`/matches/${match.id}`}
-              className={`action-item ${PRIORITY[type] === 0 ? "action-item-urgent" : ""}`}
-            >
-              <span className="action-item-text">
-                <span className="action-item-icon" aria-hidden="true">
-                  {ACTION_ICON[type]}
+        {sortedActionItems.map(({ type, league, match }) => {
+          const ActionIcon = ACTION_ICON[type];
+          return (
+            <li key={match.id}>
+              <Link
+                to={`/matches/${match.id}`}
+                className={`action-item ${PRIORITY[type] === 0 ? "action-item-urgent" : ""}`}
+              >
+                <span className="action-item-text">
+                  <span className="action-item-icon" aria-hidden="true">
+                    <ActionIcon size={16} />
+                  </span>
+                  <span>
+                    <strong>{league.name}</strong> — {ACTION_LABEL[type]}
+                  </span>
                 </span>
-                <span>
-                  <strong>{league.name}</strong> — {ACTION_LABEL[type]}
-                </span>
-              </span>
-              <code>{match.matchCode}</code>
-            </Link>
-          </li>
-        ))}
+                <code>{match.matchCode}</code>
+              </Link>
+            </li>
+          );
+        })}
         {nonUrgentReminders.map(({ league, match }) => (
           <li key={match.id}>
             <Link to={`/matches/${match.id}`} className="action-item action-item-relaxed">
               <span className="action-item-text">
                 <span className="action-item-icon" aria-hidden="true">
-                  📅
+                  <Calendar size={16} />
                 </span>
                 <span>
                   <strong>{league.name}</strong> — ยังมีแมตช์ให้แข่ง <span className="action-item-tag">ไม่ด่วน</span>
@@ -105,7 +109,7 @@ export default function HomePage() {
       <h2>ลีคของฉัน</h2>
       {leagues !== null && leagues.length === 0 && (
         <EmptyState
-          icon="🎮"
+          icon={Gamepad2}
           title="ยังไม่ได้เข้าร่วมลีคไหนเลย"
           subtitle={
             <>
@@ -123,13 +127,13 @@ export default function HomePage() {
       <nav className="home-quick-nav">
         <Link to="/leagues" className="home-quick-nav-item">
           <span className="home-quick-nav-icon" aria-hidden="true">
-            🏆
+            <Trophy size={22} />
           </span>
           <span>ลีคทั้งหมด</span>
         </Link>
         <Link to="/profile" className="home-quick-nav-item">
           <span className="home-quick-nav-icon" aria-hidden="true">
-            👤
+            <User size={22} />
           </span>
           <span>โปรไฟล์</span>
         </Link>
@@ -144,7 +148,12 @@ function RankChip({ rank }) {
 }
 
 function CupStatusBadge({ type }) {
-  return <span className={`cup-status-badge cup-status-${type}`}>{CUP_STATUS_SHORT[type]}</span>;
+  return (
+    <span className={`cup-status-badge cup-status-${type}`}>
+      {type === "champion" && <Trophy size={11} aria-hidden="true" />}
+      {CUP_STATUS_SHORT[type]}
+    </span>
+  );
 }
 
 function MyLeagueCard({ league, matches, uid }) {
@@ -178,7 +187,7 @@ function MyLeagueCard({ league, matches, uid }) {
         <Link to={`/leagues/${league.id}`} className="my-league-card-link">
           <span className="league-card-title">{league.name}</span>
           <span className="my-league-card-chevron" aria-hidden="true">
-            ›
+            <ChevronRight size={18} />
           </span>
         </Link>
         {myRank != null && <RankChip rank={myRank} />}

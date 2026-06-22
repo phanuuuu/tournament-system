@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Bell, BellOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToMyNotifications, markNotificationRead, markAllNotificationsRead } from "../firebase/notifications";
 import { useToast } from "../context/ToastContext";
@@ -15,7 +16,7 @@ const TYPE_LABEL = {
 };
 
 const CELEBRATE_TOAST = {
-  advanced_round: "ผ่านเข้ารอบถัดไปแล้ว! 🎉",
+  advanced_round: "ผ่านเข้ารอบถัดไปแล้ว!",
 };
 
 function linkFor(n) {
@@ -64,8 +65,8 @@ export default function NotificationBell() {
 
   return (
     <div className="notification-bell">
-      <button type="button" onClick={() => setOpen((v) => !v)}>
-        🔔
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-label="การแจ้งเตือน">
+        <Bell size={20} />
         {unreadCount > 0 && (
           <span className={`notification-badge ${bounce ? "notification-badge-bounce" : ""}`}>{unreadCount}</span>
         )}
@@ -73,7 +74,7 @@ export default function NotificationBell() {
 
       {open && (
         <div className="notification-dropdown">
-          {notifications.length === 0 && <EmptyState compact icon="🔔" title="ยังไม่มีการแจ้งเตือน" />}
+          {notifications.length === 0 && <EmptyState compact icon={BellOff} title="ยังไม่มีการแจ้งเตือน" />}
           {notifications.length > 0 && (
             <button type="button" onClick={() => markAllNotificationsRead(notifications)}>
               อ่านทั้งหมด

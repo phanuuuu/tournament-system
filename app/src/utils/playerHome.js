@@ -74,6 +74,6 @@ export function getCupStatus(uid, league, matches) {
         })();
 
   if (!won) return { type: "eliminated", text: `ตกรอบ · ${roundLabel(league.size, latest.round)}` };
-  if (league.status === "finished") return { type: "champion", text: "แชมป์ 🏆" };
+  if (league.status === "finished") return { type: "champion", text: "แชมป์" };
   return { type: "advancing", text: `ผ่านเข้า${roundLabel(league.size, latest.round + 1)}` };
 }

@@ -1,3 +1,17 @@
+/* ===== Icons (Lucide) ===== */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+}
+
+.inline-icon {
+  display: inline-flex;
+  vertical-align: middle;
+  color: var(--text-muted);
+}
+
 /* ===== Layout ===== */
 .app-shell {
   min-height: 100vh;
@@ -706,7 +720,7 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .home-quick-nav-icon {
-  font-size: 22px;
+  display: inline-flex;
 }
 
 .action-list {
@@ -738,7 +752,7 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .action-item-icon {
-  font-size: 16px;
+  display: inline-flex;
   flex-shrink: 0;
 }
 
@@ -821,9 +835,8 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .my-league-card-chevron {
+  display: inline-flex;
   color: var(--accent);
-  font-size: 18px;
-  font-weight: 700;
   flex-shrink: 0;
   transition: transform var(--transition-fast);
 }
@@ -833,6 +846,9 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .cup-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
   font-family: var(--font-heading);
   font-weight: 800;
   font-size: 11px;
@@ -2006,9 +2022,15 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .empty-state-icon {
-  font-size: 40px;
+  display: inline-flex;
   margin-bottom: 4px;
+  color: var(--accent);
   filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.25));
+}
+
+.empty-state-icon svg {
+  width: 40px;
+  height: 40px;
 }
 
 .empty-state-title {
@@ -2027,8 +2049,12 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .empty-state-compact .empty-state-icon {
-  font-size: 26px;
   margin-bottom: 0;
+}
+
+.empty-state-compact .empty-state-icon svg {
+  width: 26px;
+  height: 26px;
 }
 
 /* ===== เคารพ prefers-reduced-motion: ปิดแอนิเมชันที่ไม่ใช่ transition สีพื้นฐาน ===== */
