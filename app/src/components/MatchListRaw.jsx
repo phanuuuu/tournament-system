@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import StatusBadge from "./StatusBadge";
+import { roundLabel } from "../utils/roundLabel";
 
-export default function MatchListRaw({ matches, profiles }) {
+export default function MatchListRaw({ matches, profiles, bracketSize }) {
   function nameOf(uid) {
     return profiles?.[uid]?.displayName ?? uid;
   }
@@ -15,7 +16,7 @@ export default function MatchListRaw({ matches, profiles }) {
             <Link to={`/matches/${m.id}`}>
               <span>
                 <code>{m.matchCode}</code> — {nameOf(m.players.home)} vs {nameOf(m.players.away)}
-                {m.round != null && <> (รอบ {m.round})</>}
+                {m.round != null && <> ({roundLabel(bracketSize, m.round)})</>}
                 {m.leg != null && <> (นัดที่ {m.leg})</>}
               </span>
               <StatusBadge status={m.status} />

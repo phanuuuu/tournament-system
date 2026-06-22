@@ -12,6 +12,7 @@ import { useToast } from "../context/ToastContext";
 import StatusBadge from "../components/StatusBadge";
 import Spinner from "../components/Spinner";
 import ScoreStepper from "../components/ScoreStepper";
+import { roundLabel } from "../utils/roundLabel";
 
 function Avatar({ photoURL, name }) {
   return photoURL ? (
@@ -226,7 +227,7 @@ export default function MatchPage() {
         </div>
         <p>
           {league?.name}
-          {match.round != null && <> · รอบ {match.round}</>}
+          {match.round != null && <> · {roundLabel(league?.size, match.round)}</>}
           {match.leg != null && <> · นัดที่ {match.leg}</>}
         </p>
       </div>

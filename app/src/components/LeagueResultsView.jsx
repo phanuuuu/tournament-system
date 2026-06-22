@@ -19,13 +19,24 @@ export default function LeagueResultsView({ league, matches, profiles, byeBans, 
           onCreateTiebreaker={onCreateTiebreaker}
         />
       ) : (
-        <BracketView matches={matches} profiles={profiles} currentRound={league.currentRound} />
+        <BracketView
+          matches={matches}
+          profiles={profiles}
+          currentRound={league.currentRound}
+          bracketSize={league.size}
+        />
       )}
 
       <button type="button" onClick={() => setShowRaw((v) => !v)}>
         {showRaw ? "ซ่อนรายแมตช์ทั้งหมด" : "ดูรายแมตช์ทั้งหมด"}
       </button>
-      {showRaw && <MatchListRaw matches={matches} profiles={profiles} />}
+      {showRaw && (
+        <MatchListRaw
+          matches={matches}
+          profiles={profiles}
+          bracketSize={league.format === "cup" ? league.size : undefined}
+        />
+      )}
     </div>
   );
 }

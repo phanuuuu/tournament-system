@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { roundLabel } from "../utils/roundLabel";
 
 const UNIT_PX = 92; // ความสูงต่อช่องของรอบแรก — รอบหลัง ๆ จะเว้นห่างเป็น 2x, 4x, ... ของค่านี้โดยอัตโนมัติ
 const CELEBRATE_MS = 1600;
@@ -26,7 +27,7 @@ function isSettled(status) {
   return status === "approved" || status === "walkover";
 }
 
-export default function BracketView({ matches, profiles, currentRound }) {
+export default function BracketView({ matches, profiles, currentRound, bracketSize }) {
   const { user } = useAuth();
   const prevStatusRef = useRef({});
   const [justResolved, setJustResolved] = useState({});
@@ -107,7 +108,7 @@ export default function BracketView({ matches, profiles, currentRound }) {
       <div className="bracket-scroll">
         {roundNumbers.map((round) => (
           <div key={round} className={`bracket-round ${round === currentRound ? "bracket-round-current" : ""}`}>
-            <h3>รอบ {round}</h3>
+            <h3>{roundLabel(bracketSize, round)}</h3>
             <div className="bracket-slots" style={{ height: totalHeight }}>
               {rounds[round].map((m) => {
                 const isFirstRound = round === firstRound;
