@@ -18,10 +18,11 @@ service firebase.storage {
 
     // ภาพอวาตาลีค — เขียน Storage ได้แค่ signed-in (เหมือน matchPhotos) ส่วนการผูกรูปเข้ากับลีคจริง
     // (เขียน imageURL ใน Firestore) ยังจำกัดแค่แอดมินอยู่แล้วผ่าน firestore.rules
+    // จำกัด 5MB (เท่า matchPhotos) เพราะโลโก้จากมือถือ/กล้องมักใหญ่กว่า 2MB ของรูปโปรไฟล์ทั่วไป
     match /leagueImages/{leagueId}/{fileName} {
       allow read: if true;
       allow write: if request.auth != null
-        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
   }

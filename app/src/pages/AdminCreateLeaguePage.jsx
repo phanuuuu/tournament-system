@@ -7,6 +7,7 @@ import Spinner from "../components/Spinner";
 import PageHeader from "../components/PageHeader";
 
 const CUP_SIZES = [4, 8, 16, 32, 64];
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 export default function AdminCreateLeaguePage() {
   const { user } = useAuth();
@@ -22,6 +23,12 @@ export default function AdminCreateLeaguePage() {
 
   function handleImageChange(e) {
     const file = e.target.files?.[0] ?? null;
+    if (file && file.size > MAX_IMAGE_SIZE) {
+      setError("ไฟล์ภาพลีคต้องไม่เกิน 5MB");
+      e.target.value = "";
+      return;
+    }
+    setError("");
     setImageFile(file);
     setImagePreview(file ? URL.createObjectURL(file) : null);
   }
@@ -82,7 +89,7 @@ export default function AdminCreateLeaguePage() {
         <div className="league-image-edit">
           {imagePreview && <img src={imagePreview} alt="" className="league-avatar" width={48} height={48} />}
           <label>
-            ภาพลีค (ไม่บังคับ)
+            ภาพลีค (ไม่บังคับ, ไม่เกิน 5MB)
             <input type="file" accept="image/*" onChange={handleImageChange} />
           </label>
         </div>

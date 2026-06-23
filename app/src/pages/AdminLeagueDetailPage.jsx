@@ -22,6 +22,7 @@ import LeagueAvatar from "../components/LeagueAvatar";
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
 const STATUS_LABEL = { open: "เปิดรับสมัคร", ongoing: "กำลังแข่ง", finished: "จบแล้ว" };
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 export default function AdminLeagueDetailPage() {
   const { leagueId } = useParams();
@@ -90,6 +91,11 @@ export default function AdminLeagueDetailPage() {
   async function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError("ไฟล์ภาพลีคต้องไม่เกิน 5MB");
+      e.target.value = "";
+      return;
+    }
     setError("");
     setImageUploading(true);
     try {
@@ -127,7 +133,7 @@ export default function AdminLeagueDetailPage() {
       </div>
       <div className="league-image-edit">
         <label>
-          เปลี่ยนภาพลีค
+          เปลี่ยนภาพลีค (ไม่เกิน 5MB)
           <input type="file" accept="image/*" onChange={handleImageChange} disabled={imageUploading} />
         </label>
         {imageUploading && <Spinner size="sm" />}
