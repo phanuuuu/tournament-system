@@ -35,6 +35,7 @@ export default function MatchPage() {
   const [myPenalty, setMyPenalty] = useState("");
   const [oppPenalty, setOppPenalty] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreviewURL, setPhotoPreviewURL] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [contactInfo, setContactInfo] = useState(null);
@@ -90,6 +91,7 @@ export default function MatchPage() {
         setMyPenalty(String(isHome ? mine.penaltyHome : mine.penaltyAway));
         setOppPenalty(String(isHome ? mine.penaltyAway : mine.penaltyHome));
       }
+      setPhotoPreviewURL(mine.photoURL ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match?.id]);
@@ -103,6 +105,12 @@ export default function MatchPage() {
   async function handleCopyCode() {
     await navigator.clipboard.writeText(match.matchCode);
     showToast("คัดลอกรหัสแล้ว", "success");
+  }
+
+  function handlePhotoChange(e) {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setPhotoPreviewURL(file ? URL.createObjectURL(file) : (mySubmission?.photoURL ?? null));
   }
 
   async function handleContactOpponent() {
@@ -214,6 +222,12 @@ export default function MatchPage() {
   const isAdmin = profile?.role === "admin";
   const showPenaltyBox = needsPenalty && isTied;
 
+  const homeSubmission = match.submissions?.[match.players.home];
+  const awaySubmission = match.submissions?.[match.players.away];
+  const bothSubmitted = !!(homeSubmission && awaySubmission);
+  // กันผู้เล่นเห็นเลขที่คู่แข่งส่งก่อนตัวเองส่ง (เลี่ยง bias) — แต่แอดมินเห็นได้เสมอ จะได้ตัดสินแทนได้ถ้าอีกฝั่งลืมส่ง
+  const showSubmissions = isAdmin || bothSubmitted;
+
   return (
     <div className="page">
       <PageHeader backTo={`/leagues/${match.leagueId}`} backLabel="กลับลีค" />
@@ -284,16 +298,45 @@ export default function MatchPage() {
         </div>
       )}
 
-      {(match.status === "disputed" || match.status === "approved") && mySubmission && opponentSubmission && (
+      {isAdmin && match.status === "one_submitted" && (
+        <p className="status-badge status-yellow match-hint">
+          {homeSubmission ? profiles[match.players.home]?.displayName : profiles[match.players.away]?.displayName}
+          {" "}ส่งผลแล้ว รออีกฝั่งส่งอยู่ — ถ้ารอนานเกินไป ตัดสินผลแทนได้ที่ฟอร์มด้านล่าง
+        </p>
+      )}
+
+      {showSubmissions && (homeSubmission || awaySubmission) && (
         <div className="submission-compare">
-          <p>
-            ผลที่ {profiles[match.players.home]?.displayName} ส่ง: {match.submissions[match.players.home].scoreHome}-
-            {match.submissions[match.players.home].scoreAway}
-          </p>
-          <p>
-            ผลที่ {profiles[match.players.away]?.displayName} ส่ง: {match.submissions[match.players.away].scoreHome}-
-            {match.submissions[match.players.away].scoreAway}
-          </p>
+          {homeSubmission && (
+            <div className="submission-row">
+              <p>
+                ผลที่ {profiles[match.players.home]?.displayName} ส่ง: {homeSubmission.scoreHome}-{homeSubmission.scoreAway}
+                {homeSubmission.penaltyHome != null && (
+                  <> (จุดโทษ {homeSubmission.penaltyHome}-{homeSubmission.penaltyAway})</>
+                )}
+              </p>
+              {homeSubmission.photoURL && (
+                <a href={homeSubmission.photoURL} target="_blank" rel="noreferrer" className="submission-photo-link">
+                  <img src={homeSubmission.photoURL} alt="" className="submission-photo" />
+                </a>
+              )}
+            </div>
+          )}
+          {awaySubmission && (
+            <div className="submission-row">
+              <p>
+                ผลที่ {profiles[match.players.away]?.displayName} ส่ง: {awaySubmission.scoreHome}-{awaySubmission.scoreAway}
+                {awaySubmission.penaltyHome != null && (
+                  <> (จุดโทษ {awaySubmission.penaltyHome}-{awaySubmission.penaltyAway})</>
+                )}
+              </p>
+              {awaySubmission.photoURL && (
+                <a href={awaySubmission.photoURL} target="_blank" rel="noreferrer" className="submission-photo-link">
+                  <img src={awaySubmission.photoURL} alt="" className="submission-photo" />
+                </a>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -321,8 +364,14 @@ export default function MatchPage() {
 
           <label>
             แนบรูป (ไม่บังคับ)
-            <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)} />
+            <input type="file" accept="image/*" onChange={handlePhotoChange} />
           </label>
+          {photoPreviewURL && (
+            <div className="match-photo-preview">
+              <img src={photoPreviewURL} alt="" />
+              <span className="hint-text">{photoFile ? "รูปที่เลือกใหม่" : "รูปที่ส่งไว้ก่อนหน้า"}</span>
+            </div>
+          )}
 
           {!mySubmission && opponentSubmission && (
             <p className="status-badge status-yellow match-hint">คู่แข่งส่งผลแล้ว รอคุณยืนยัน</p>
@@ -340,9 +389,12 @@ export default function MatchPage() {
         </form>
       )}
 
-      {isAdmin && (match.status === "approved" || match.status === "walkover") && (
+      {isAdmin && (
         <form onSubmit={handleAdminOverride}>
-          <h2>แก้ไขผลโดยตรง (แอดมิน)</h2>
+          <h2>{match.status === "approved" || match.status === "walkover" ? "แก้ไขผลโดยตรง (แอดมิน)" : "ตัดสินผลแมตช์นี้ (แอดมิน)"}</h2>
+          {match.status !== "approved" && match.status !== "walkover" && (
+            <p className="hint-text">ใช้ตัดสินได้เลยถ้าผู้เล่นอีกฝั่งไม่ส่งผลหรือติดต่อไม่ได้ ไม่ต้องรอให้ทั้งสองฝั่งส่งก่อน</p>
+          )}
           <div className="score-stepper-row">
             <ScoreStepper
               label={`สกอร์ ${profiles[match.players.home]?.displayName ?? ""} (เหย้า)`}
