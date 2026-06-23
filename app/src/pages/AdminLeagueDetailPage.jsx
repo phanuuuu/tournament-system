@@ -7,14 +7,17 @@ import {
   kickPlayer,
   canStartLeague,
   canDeleteLeague,
+  updateLeagueImage,
 } from "../firebase/leagues";
 import { subscribeToLeagueMatches, createTiebreakerMatch, revertLatestRound } from "../firebase/matches";
 import { subscribeToByeBans, setByeBan } from "../firebase/byeBans";
+import { uploadLeagueImage } from "../firebase/storageHelpers";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { useAuth } from "../context/AuthContext";
 import LeagueResultsView from "../components/LeagueResultsView";
 import Spinner from "../components/Spinner";
 import PageHeader from "../components/PageHeader";
+import LeagueAvatar from "../components/LeagueAvatar";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
@@ -29,6 +32,7 @@ export default function AdminLeagueDetailPage() {
   const [byeBans, setByeBans] = useState({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
   const profiles = usePublicProfiles(league?.playerIds);
 
   useEffect(() => subscribeToLeague(leagueId, setLeague), [leagueId]);
@@ -83,6 +87,21 @@ export default function AdminLeagueDetailPage() {
     }
   }
 
+  async function handleImageChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setError("");
+    setImageUploading(true);
+    try {
+      const url = await uploadLeagueImage(leagueId, file);
+      await updateLeagueImage(leagueId, url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setImageUploading(false);
+    }
+  }
+
   async function handleRevert() {
     setError("");
     if (!window.confirm("ย้อนรอบล่าสุด: ลบคู่ในรอบที่สร้างอัตโนมัติล่าสุดทิ้ง แล้วให้คุณแก้ผลรอบก่อนหน้าใหม่ ยืนยันหรือไม่?")) return;
@@ -102,7 +121,17 @@ export default function AdminLeagueDetailPage() {
   return (
     <div className="page-wide">
       <PageHeader backTo="/admin/leagues" backLabel="ลีคทั้งหมด" />
-      <h1>{league.name}</h1>
+      <div className="league-detail-title-row">
+        <LeagueAvatar league={league} size={48} />
+        <h1>{league.name}</h1>
+      </div>
+      <div className="league-image-edit">
+        <label>
+          เปลี่ยนภาพลีค
+          <input type="file" accept="image/*" onChange={handleImageChange} disabled={imageUploading} />
+        </label>
+        {imageUploading && <Spinner size="sm" />}
+      </div>
       <p>
         {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) ·{" "}
         <span className={`status-badge status-${{ open: "yellow", ongoing: "green", finished: "gray" }[league.status]}`}>

@@ -4,6 +4,7 @@ import { subscribeToLeagues } from "../firebase/leagues";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import PageHeader from "../components/PageHeader";
+import LeagueAvatar from "../components/LeagueAvatar";
 import { Trophy } from "lucide-react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
@@ -45,9 +46,12 @@ export default function AdminLeagueListPage() {
         {leagues?.map((league) => (
           <li key={league.id}>
             <Link to={`/admin/leagues/${league.id}`} className="league-card-info">
-              <span className="league-card-title">{league.name}</span>
-              <span className="league-card-meta">
-                {FORMAT_LABEL[league.format]} · {league.playerIds.length}/{league.size} คน
+              <LeagueAvatar league={league} size={32} />
+              <span className="league-card-info-text">
+                <span className="league-card-title">{league.name}</span>
+                <span className="league-card-meta">
+                  {FORMAT_LABEL[league.format]} · {league.playerIds.length}/{league.size} คน
+                </span>
               </span>
             </Link>
             <span className={`status-badge status-${STATUS_COLOR[league.status]}`}>{STATUS_LABEL[league.status]}</span>

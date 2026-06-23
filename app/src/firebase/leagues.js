@@ -67,11 +67,16 @@ export async function createLeague(adminUid, { name, format, matchType, size }) 
     status: "open",
     playerIds: [],
     currentRound: null,
+    imageURL: null,
     createdAt: serverTimestamp(),
     createdBy: adminUid,
     startedAt: null,
     finishedAt: null,
   });
+}
+
+export async function updateLeagueImage(leagueId, imageURL) {
+  await updateDoc(doc(db, "leagues", leagueId), { imageURL });
 }
 
 export async function joinLeague(leagueId, uid) {

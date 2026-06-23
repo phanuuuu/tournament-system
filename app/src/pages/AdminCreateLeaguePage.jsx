@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { createLeague, isValidLeagueSize } from "../firebase/leagues";
+import { createLeague, updateLeagueImage, isValidLeagueSize } from "../firebase/leagues";
+import { uploadLeagueImage } from "../firebase/storageHelpers";
 import Spinner from "../components/Spinner";
 import PageHeader from "../components/PageHeader";
 
@@ -14,8 +15,16 @@ export default function AdminCreateLeaguePage() {
   const [format, setFormat] = useState("cup");
   const [matchType, setMatchType] = useState("single");
   const [size, setSize] = useState(8);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  function handleImageChange(e) {
+    const file = e.target.files?.[0] ?? null;
+    setImageFile(file);
+    setImagePreview(file ? URL.createObjectURL(file) : null);
+  }
 
   function handleFormatChange(newFormat) {
     setFormat(newFormat);
@@ -49,6 +58,10 @@ export default function AdminCreateLeaguePage() {
         matchType,
         size: Number(size),
       });
+      if (imageFile) {
+        const url = await uploadLeagueImage(ref.id, imageFile);
+        await updateLeagueImage(ref.id, url);
+      }
       navigate(`/admin/leagues/${ref.id}`, { replace: true });
     } catch (err) {
       setError(err.message);
@@ -65,6 +78,14 @@ export default function AdminCreateLeaguePage() {
           ชื่อลีค *
           <input value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
+
+        <div className="league-image-edit">
+          {imagePreview && <img src={imagePreview} alt="" className="league-avatar" width={48} height={48} />}
+          <label>
+            ภาพลีค (ไม่บังคับ)
+            <input type="file" accept="image/*" onChange={handleImageChange} />
+          </label>
+        </div>
 
         <label>
           รูปแบบการแข่ง *

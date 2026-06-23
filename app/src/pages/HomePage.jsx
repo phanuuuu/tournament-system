@@ -9,6 +9,7 @@ import { getActionItems, getNonUrgentReminders, getCupStatus } from "../utils/pl
 import StatusBadge from "../components/StatusBadge";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import LeagueAvatar from "../components/LeagueAvatar";
 import { useEffect, useState } from "react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
@@ -185,6 +186,7 @@ function MyLeagueCard({ league, matches, uid }) {
     <div className="my-league-card">
       <div className="my-league-card-head">
         <Link to={`/leagues/${league.id}`} className="my-league-card-link">
+          <LeagueAvatar league={league} size={28} />
           <span className="league-card-title">{league.name}</span>
           <span className="my-league-card-chevron" aria-hidden="true">
             <ChevronRight size={18} />

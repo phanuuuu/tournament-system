@@ -466,9 +466,17 @@ button.btn-ghost:hover:not(:disabled) {
 
 .league-card-info {
   display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.league-card-info-text {
+  display: flex;
   flex-direction: column;
   gap: 2px;
-  text-decoration: none;
+  min-width: 0;
 }
 
 .league-card-title {
@@ -645,6 +653,56 @@ button.btn-ghost:hover:not(:disabled) {
   flex-direction: column;
   gap: 8px;
   text-decoration: none;
+}
+
+/* ===== ภาพอวาตาลีค (วงกลม, ไม่มีรูป = ไอคอนตามรูปแบบลีค) ===== */
+.league-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.league-avatar-fallback {
+  color: var(--accent);
+}
+
+.league-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.league-card-title-row .league-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.league-detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.league-detail-title-row h1 {
+  margin: 0;
+}
+
+.league-image-edit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.league-image-edit label {
+  margin: 0;
 }
 
 .league-card-badges {

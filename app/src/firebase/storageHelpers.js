@@ -12,3 +12,9 @@ export async function uploadMatchPhoto(matchId, file) {
   await uploadBytes(fileRef, file);
   return getDownloadURL(fileRef);
 }
+
+export async function uploadLeagueImage(leagueId, file) {
+  const fileRef = ref(storage, `leagueImages/${leagueId}/${Date.now()}-${file.name}`);
+  await uploadBytes(fileRef, file);
+  return getDownloadURL(fileRef);
+}

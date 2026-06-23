@@ -7,6 +7,7 @@ import EmptyState from "../components/EmptyState";
 import PlayerCountRing from "../components/PlayerCountRing";
 import Spinner from "../components/Spinner";
 import PageHeader from "../components/PageHeader";
+import LeagueAvatar from "../components/LeagueAvatar";
 import { Inbox, Hourglass, Flag, UserCheck } from "lucide-react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
@@ -132,7 +133,10 @@ export default function LeagueListPage() {
                     </span>
                   )}
                 </div>
-                <span className="league-card-title">{league.name}</span>
+                <div className="league-card-title-row">
+                  <LeagueAvatar league={league} size={32} />
+                  <span className="league-card-title">{league.name}</span>
+                </div>
               </Link>
 
               <div className="league-card-bottom">
