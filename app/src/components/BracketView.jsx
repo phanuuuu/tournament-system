@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown } from "lucide-react";
-import { computeBracketLayout, scoreLabel, winnerUidOf } from "../utils/bracketLayout";
+import { Crown, Play, SkipForward } from "lucide-react";
+import { computeBracketLayout, computeTeamPaths, scoreLabel, winnerUidOf } from "../utils/bracketLayout";
 import { roundLabel } from "../utils/roundLabel";
+import { getStoredSkipAnimation, prefersReducedMotion, setStoredSkipAnimation } from "../utils/animationPrefs";
 import CupTrophy from "./CupTrophy";
 
 const UNIT_PX = 96; // ความสูงต่อช่องของรอบแรกฝั่งใดฝั่งหนึ่ง (รอบลึกขึ้นเว้นห่างเป็น 2x, 4x, ... อัตโนมัติด้วย justify-content: space-around)
+const STAGGER_MS = 380; // ระยะห่างจังหวะเริ่มวาดของแต่ละรอบ (ไล่ทีละรอบ)
+const DRAW_MS = 480; // ระยะเวลาที่เส้นแต่ละช่วงใช้วาดจนเต็ม
+const CELEBRATE_MS = 900;
 
 function winnerSideOf(m) {
   const uid = winnerUidOf(m);
@@ -23,7 +27,7 @@ function TeamAvatar({ photoURL, name }) {
   );
 }
 
-function TeamRow({ profile, label, isWinner, isChampionSide, placeholder }) {
+function TeamRow({ profile, label, isWinner, isChampionSide, placeholder, boxRef }) {
   if (placeholder) {
     return (
       <div className="cup-team cup-team-placeholder">
@@ -38,7 +42,7 @@ function TeamRow({ profile, label, isWinner, isChampionSide, placeholder }) {
   }
   return (
     <div className={`cup-team ${isWinner ? "cup-team-winner" : ""} ${isChampionSide ? "cup-team-champion-side" : ""}`}>
-      <div className="cup-team-top">
+      <div className="cup-team-top" ref={boxRef}>
         <TeamAvatar photoURL={profile?.photoURL} name={profile?.displayName} />
         <span className="cup-team-score">{label}</span>
       </div>
@@ -47,8 +51,8 @@ function TeamRow({ profile, label, isWinner, isChampionSide, placeholder }) {
   );
 }
 
-function MatchBox({ slot, profiles, championUid }) {
-  const { match } = slot;
+function MatchBox({ slot, profiles, championUid, registerBox }) {
+  const { match, round } = slot;
   if (!match) {
     return (
       <div className="cup-match cup-match-placeholder">
@@ -67,12 +71,14 @@ function MatchBox({ slot, profiles, championUid }) {
         label={scoreLabel("home", match)}
         isWinner={winner === "home"}
         isChampionSide={isChampionMatch && winner === "home"}
+        boxRef={(el) => registerBox(`${round}-${match.players.home}`, el)}
       />
       <TeamRow
         profile={profiles[match.players.away]}
         label={scoreLabel("away", match)}
         isWinner={winner === "away"}
         isChampionSide={isChampionMatch && winner === "away"}
+        boxRef={(el) => registerBox(`${round}-${match.players.away}`, el)}
       />
       {match.status === "walkover" && (
         <div className="cup-match-walkover">ชนะบาย: {profiles[match.walkover.winnerUid]?.displayName}</div>
@@ -81,65 +87,33 @@ function MatchBox({ slot, profiles, championUid }) {
   );
 }
 
-// เส้นตรงเชื่อมรอบรองชนะเลิศของแต่ละฝั่งเข้าสู่รอบชิงกลางจอ (ฝั่งละ 1 คู่เท่านั้นเสมอ ไม่มีกิ่งซ้อนแบบ Connector ปกติ)
-function TailConnector({ championPath }) {
-  return (
-    <div className={`cup-tail-connector ${championPath ? "cup-connector-champion" : ""}`} aria-hidden="true">
-      <span className="cup-tail-line" />
-    </div>
-  );
-}
-
-// เส้นเชื่อมระหว่างรอบ — ฝั่งซ้ายเรียงรอบเข้ากลาง (ปกติ), ฝั่งขวาเรียงรอบเข้ากลางแบบกลับทาง (mirror ด้วย CSS scaleX เดียวกัน)
-function Connector({ height, championPath, mirror }) {
-  return (
-    <div
-      className={`cup-connector ${championPath ? "cup-connector-champion" : ""} ${mirror ? "cup-connector-mirror" : ""}`}
-      style={{ height }}
-      aria-hidden="true"
-    >
-      <span className="cup-connector-top" />
-      <span className="cup-connector-bottom" />
-      <span className="cup-connector-vert" />
-      <span className="cup-connector-out" />
-    </div>
-  );
-}
-
-function SideColumn({ rounds, bracketSize, profiles, championUid, sideHeight, mirror }) {
-  const unitFor = (slotCount) => sideHeight / slotCount;
-
+function SideColumn({ rounds, bracketSize, profiles, championUid, sideHeight, mirror, registerBox }) {
   return (
     <div className={`cup-side ${mirror ? "cup-side-right" : "cup-side-left"}`} style={{ height: sideHeight }}>
-      {rounds.map((r, colIdx) => {
-        const isOutermost = mirror ? colIdx === rounds.length - 1 : colIdx === 0;
-        return (
-          <div key={r.round} className="cup-round-col">
-            <h3>{roundLabel(bracketSize, r.round)}</h3>
-            <div className="cup-round-slots" style={{ height: sideHeight }}>
-              {r.slots.map((slot) => {
-                const prevSlotCount = r.slots.length * 2;
-                const championPath = championUid != null && slot.match && winnerUidOf(slot.match) === championUid;
-                return (
-                  <div key={slot.slot} className="cup-slot">
-                    {!isOutermost && !mirror && <Connector height={unitFor(prevSlotCount)} championPath={championPath} />}
-                    <MatchBox slot={slot} profiles={profiles} championUid={championUid} />
-                    {!isOutermost && mirror && (
-                      <Connector height={unitFor(prevSlotCount)} championPath={championPath} mirror />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+      {rounds.map((r) => (
+        <div key={r.round} className="cup-round-col">
+          <h3>{roundLabel(bracketSize, r.round)}</h3>
+          <div className="cup-round-slots" style={{ height: sideHeight }}>
+            {r.slots.map((slot) => (
+              <div key={slot.slot} className="cup-slot">
+                <MatchBox slot={{ ...slot, round: r.round }} profiles={profiles} championUid={championUid} registerBox={registerBox} />
+              </div>
+            ))}
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
+}
+
+// เส้นรูปข้อพับ (ออกแนวนอน -> เลี้ยวแนวตั้ง -> เข้าแนวนอน) เชื่อมจุดศูนย์กลางสองกล่อง ให้หน้าตาเหมือนเส้นสายถ้วยทั่วไป
+function elbowPath(from, to) {
+  const midX = (from.x + to.x) / 2;
+  return `M ${from.x} ${from.y} L ${midX} ${from.y} L ${midX} ${to.y} L ${to.x} ${to.y}`;
 }
 
 export default function BracketView({ matches, profiles, bracketSize, leagueStatus }) {
-  const layout = computeBracketLayout(matches, bracketSize);
+  const layout = useMemo(() => computeBracketLayout(matches, bracketSize), [matches, bracketSize]);
   const { leftRounds, rightRounds, finalSlot, championUid, totalRounds } = layout;
   const [mobileSide, setMobileSide] = useState("both");
 
@@ -148,41 +122,161 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
   const champion = championUid ? profiles[championUid] : null;
   const isFinished = leagueStatus === "finished";
 
-  const leftSemi = leftRounds[leftRounds.length - 1]?.slots[0];
-  const rightSemi = rightRounds[0]?.slots[0];
-  const leftTailChampion = championUid != null && leftSemi?.match && winnerUidOf(leftSemi.match) === championUid;
-  const rightTailChampion = championUid != null && rightSemi?.match && winnerUidOf(rightSemi.match) === championUid;
+  // ===== แอนิเมชันวาดเส้น =====
+  const [skipAnimation, setSkipAnimation] = useState(() => prefersReducedMotion() || getStoredSkipAnimation());
+  const [positions, setPositions] = useState({});
+  const [drawnKeys, setDrawnKeys] = useState(() => new Set());
+  const [keyDelays, setKeyDelays] = useState({});
+  const [celebrate, setCelebrate] = useState(false);
+  const boxRefs = useRef(new Map());
+  const trophyRef = useRef(null);
+  const containerRef = useRef(null);
+  const prevChampionRef = useRef(undefined);
+  const drawnKeysRef = useRef(new Set());
+
+  function registerBox(key, el) {
+    if (el) boxRefs.current.set(key, el);
+    else boxRefs.current.delete(key);
+  }
+
+  const teamPaths = useMemo(() => computeTeamPaths(matches, bracketSize, championUid), [matches, bracketSize, championUid]);
+
+  // รายการ "ช่วงเชื่อม" ทั้งหมดพร้อม metadata (group ของรอบต้นทาง ใช้คำนวณ stagger) — คำนวณครั้งเดียวต่อ teamPaths เปลี่ยน
+  const segmentList = useMemo(
+    () =>
+      teamPaths.flatMap((tp, ti) =>
+        tp.segments.map((seg, si) => ({
+          key: `${tp.uid}__${ti}_${si}__${seg.fromRound}-${seg.toRound}`,
+          uid: tp.uid,
+          seg,
+          isChampion: tp.isChampion,
+        }))
+      ),
+    [teamPaths]
+  );
+  const allSegmentKeys = useMemo(() => segmentList.map((s) => s.key), [segmentList]);
+  const allSegmentKeysJoined = allSegmentKeys.join(",");
+
+  // วัดตำแหน่งกล่องจริงหลัง render (responsive ตรง) — รีวัดตอน resize/รอบเปลี่ยน/สลับมุมมองมือถือด้วย
+  useLayoutEffect(() => {
+    function measure() {
+      const containerEl = containerRef.current;
+      if (!containerEl) return;
+      const containerRect = containerEl.getBoundingClientRect();
+      const next = {};
+      for (const [key, el] of boxRefs.current) {
+        const r = el.getBoundingClientRect();
+        next[key] = { x: r.left - containerRect.left + r.width / 2, y: r.top - containerRect.top + r.height / 2 };
+      }
+      if (trophyRef.current) {
+        const r = trophyRef.current.getBoundingClientRect();
+        next.trophy = { x: r.left - containerRect.left + r.width / 2, y: r.top - containerRect.top + r.height / 2 };
+      }
+      setPositions(next);
+    }
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [matches, mobileSide, bracketSize]);
+
+  // ทำเครื่องหมาย "วาดแล้ว" — ชุดแรกตอนโหลดหน้าวาดทุกช่วงพร้อม stagger ไล่ทีละรอบ, ชุดหลัง (ผลแมตช์เปลี่ยนสด ๆ ระหว่างดู) วาดทันทีไม่หน่วง
+  useEffect(() => {
+    const newKeys = allSegmentKeys.filter((k) => !drawnKeysRef.current.has(k));
+    if (newKeys.length === 0) return;
+    const isInitialBatch = drawnKeysRef.current.size === 0;
+
+    const raf = requestAnimationFrame(() => {
+      setKeyDelays((prevDelays) => {
+        const nextDelays = { ...prevDelays };
+        for (const key of newKeys) {
+          if (skipAnimation || !isInitialBatch) {
+            nextDelays[key] = 0;
+          } else {
+            const meta = segmentList.find((s) => s.key === key);
+            nextDelays[key] = meta ? (meta.seg.group - 1) * STAGGER_MS : 0;
+          }
+        }
+        return nextDelays;
+      });
+      for (const key of newKeys) drawnKeysRef.current.add(key);
+      setDrawnKeys(new Set(drawnKeysRef.current));
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allSegmentKeysJoined, skipAnimation]);
+
+  // ฉลองแชมป์ — เด้ง/เรืองตอนเส้นวิ่งถึงถ้วยเสร็จ (ครั้งแรกที่รู้ว่ามีแชมป์ ไม่ว่าจะตอนโหลดหน้าหรือสด ๆ ระหว่างดู)
+  useEffect(() => {
+    if (championUid == null || prevChampionRef.current === championUid) {
+      prevChampionRef.current = championUid;
+      return;
+    }
+    const wasInitial = prevChampionRef.current === undefined;
+    prevChampionRef.current = championUid;
+    if (skipAnimation) return;
+    const delay = wasInitial ? totalRounds * STAGGER_MS + DRAW_MS : DRAW_MS;
+    const t = setTimeout(() => {
+      setCelebrate(true);
+      setTimeout(() => setCelebrate(false), CELEBRATE_MS);
+    }, delay);
+    return () => clearTimeout(t);
+  }, [championUid, skipAnimation, totalRounds]);
+
+  function handleToggleSkip() {
+    const next = !skipAnimation;
+    setSkipAnimation(next);
+    setStoredSkipAnimation(next);
+    if (next) {
+      drawnKeysRef.current = new Set(allSegmentKeys);
+      setDrawnKeys(new Set(allSegmentKeys));
+    }
+  }
 
   return (
     <div className="cup-bracket">
       {totalRounds > 1 && (
         <div className="cup-bracket-mobile-toggle">
-          <button
-            type="button"
-            className={mobileSide === "left" ? "tab-active" : ""}
-            onClick={() => setMobileSide("left")}
-          >
+          <button type="button" className={mobileSide === "left" ? "tab-active" : ""} onClick={() => setMobileSide("left")}>
             สายซ้าย
           </button>
-          <button
-            type="button"
-            className={mobileSide === "both" ? "tab-active" : ""}
-            onClick={() => setMobileSide("both")}
-          >
+          <button type="button" className={mobileSide === "both" ? "tab-active" : ""} onClick={() => setMobileSide("both")}>
             ทั้งหมด
           </button>
-          <button
-            type="button"
-            className={mobileSide === "right" ? "tab-active" : ""}
-            onClick={() => setMobileSide("right")}
-          >
+          <button type="button" className={mobileSide === "right" ? "tab-active" : ""} onClick={() => setMobileSide("right")}>
             สายขวา
           </button>
         </div>
       )}
 
       <div className="cup-bracket-scroll">
-        <div className={`cup-bracket-row cup-bracket-mobile-${mobileSide}`}>
+        <div className={`cup-bracket-row cup-bracket-mobile-${mobileSide}`} ref={containerRef}>
+          <svg className="cup-paths-svg" aria-hidden="true">
+            {segmentList.map(({ key, uid, seg, isChampion }) => {
+              const fromKey = `${seg.fromRound}-${uid}`;
+              const toKey = seg.toRound === "trophy" ? "trophy" : `${seg.toRound}-${uid}`;
+              const from = positions[fromKey];
+              const to = positions[toKey];
+              if (!from || !to) return null;
+              const delay = keyDelays[key] ?? 0;
+              return (
+                <path
+                  key={key}
+                  d={elbowPath(from, to)}
+                  pathLength={1}
+                  className={`cup-path ${isChampion ? "cup-path-champion" : ""} ${
+                    drawnKeys.has(key) ? "cup-path-drawn" : ""
+                  } ${skipAnimation ? "cup-path-instant" : ""}`}
+                  style={{ transitionDelay: `${delay}ms`, transitionDuration: `${DRAW_MS}ms` }}
+                />
+              );
+            })}
+          </svg>
+
           {leftRounds.length > 0 && (
             <SideColumn
               rounds={leftRounds}
@@ -191,14 +285,14 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
               championUid={championUid}
               sideHeight={sideHeight}
               mirror={false}
+              registerBox={registerBox}
             />
           )}
-          {leftRounds.length > 0 && finalSlot && <TailConnector championPath={leftTailChampion} />}
 
           <div className="cup-center" style={{ minHeight: sideHeight }}>
             <div className="cup-center-champion">
               {champion ? (
-                <div className="cup-champion-badge">
+                <div className={`cup-champion-badge ${celebrate ? "cup-celebrate" : ""}`}>
                   <Crown size={28} className="cup-champion-crown" aria-hidden="true" />
                   <TeamAvatar photoURL={champion.photoURL} name={champion.displayName} />
                 </div>
@@ -206,16 +300,17 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
                 <div className="cup-champion-placeholder" aria-hidden="true" />
               )}
             </div>
-            <CupTrophy lit={isFinished} size={84} />
+            <div ref={trophyRef} className={celebrate ? "cup-celebrate" : ""}>
+              <CupTrophy lit={isFinished} size={84} />
+            </div>
             {champion && <span className="cup-champion-name">{champion.displayName}</span>}
             {finalSlot && (
               <div className="cup-round-col cup-final-col">
                 <h3>{roundLabel(bracketSize, finalSlot.round)}</h3>
-                <MatchBox slot={finalSlot} profiles={profiles} championUid={championUid} />
+                <MatchBox slot={finalSlot} profiles={profiles} championUid={championUid} registerBox={registerBox} />
               </div>
             )}
           </div>
-          {rightRounds.length > 0 && finalSlot && <TailConnector championPath={rightTailChampion} />}
 
           {rightRounds.length > 0 && (
             <SideColumn
@@ -225,10 +320,16 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
               championUid={championUid}
               sideHeight={sideHeight}
               mirror
+              registerBox={registerBox}
             />
           )}
         </div>
       </div>
+
+      <button type="button" className="cup-skip-btn" onClick={handleToggleSkip}>
+        {skipAnimation ? <Play size={14} aria-hidden="true" /> : <SkipForward size={14} aria-hidden="true" />}
+        {skipAnimation ? "เปิดอนิเมชัน" : "ข้ามอนิเมชัน"}
+      </button>
     </div>
   );
 }

@@ -1575,6 +1575,25 @@ button.btn-ghost:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
+.cup-skip-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px auto 0;
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cup-skip-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
 .cup-bracket-scroll {
   overflow-x: auto;
   overflow-y: hidden;
@@ -1584,17 +1603,67 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .cup-bracket-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 20px;
   min-width: max-content;
   margin: 0 auto;
 }
 
+/* SVG เส้นทางแอนิเมชันลอยทับเลย์เอาต์ทั้งหมด — pointer-events none กันบังคลิกการ์ดแมตช์ */
+.cup-paths-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cup-path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  opacity: 0.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition-property: stroke-dashoffset;
+  transition-timing-function: ease-out;
+}
+
+.cup-path-drawn {
+  stroke-dashoffset: 0;
+}
+
+.cup-path-instant {
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+}
+
+.cup-path-champion {
+  stroke: var(--champion-color);
+  stroke-width: 2.5;
+  opacity: 1;
+  filter: drop-shadow(0 0 4px var(--champion-glow));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cup-path {
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
 .cup-side {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
+  gap: 28px;
   flex-shrink: 0;
 }
 
@@ -1623,87 +1692,6 @@ button.btn-ghost:hover:not(:disabled) {
 .cup-slot {
   display: flex;
   align-items: center;
-}
-
-/* ===== เส้นเชื่อมระหว่างรอบ — ฝั่งขวาใช้ scaleX(-1) กลับทางจากฝั่งซ้ายตัวเดียวกัน ===== */
-.cup-connector {
-  position: relative;
-  width: 24px;
-  flex-shrink: 0;
-}
-
-.cup-connector-top,
-.cup-connector-bottom,
-.cup-connector-vert,
-.cup-connector-out {
-  position: absolute;
-  background: var(--accent);
-  opacity: 0.5;
-}
-
-.cup-connector-top,
-.cup-connector-bottom {
-  left: 0;
-  width: 50%;
-  height: 2px;
-}
-
-.cup-connector-top {
-  top: 0;
-}
-
-.cup-connector-bottom {
-  bottom: 0;
-}
-
-.cup-connector-vert {
-  left: 50%;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-}
-
-.cup-connector-out {
-  left: 50%;
-  top: 50%;
-  width: 50%;
-  height: 2px;
-  transform: translateY(-1px);
-}
-
-.cup-connector-mirror {
-  transform: scaleX(-1);
-}
-
-.cup-connector-champion .cup-connector-top,
-.cup-connector-champion .cup-connector-bottom,
-.cup-connector-champion .cup-connector-vert,
-.cup-connector-champion .cup-connector-out {
-  background: var(--champion-color);
-  opacity: 1;
-  box-shadow: 0 0 8px var(--champion-glow);
-}
-
-/* เส้นตรงรอบรองชนะเลิศ -> รอบชิงกลางจอ (ฝั่งละ 1 เส้นเสมอ ไม่มีกิ่ง) */
-.cup-tail-connector {
-  width: 20px;
-  height: 2px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
-
-.cup-tail-line {
-  width: 100%;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0.5;
-}
-
-.cup-tail-connector.cup-connector-champion .cup-tail-line {
-  background: var(--champion-color);
-  opacity: 1;
-  box-shadow: 0 0 8px var(--champion-glow);
 }
 
 /* ===== กล่องแมตช์ + การ์ดทีม (อวาตาร์วงกลม + ชื่อใต้ภาพ + สกอร์) ===== */
@@ -1816,12 +1804,14 @@ button.btn-ghost:hover:not(:disabled) {
 
 /* ===== ถ้วยกลางจอ + แชมป์ ===== */
 .cup-center {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 16px;
+  padding: 0 8px;
   flex-shrink: 0;
 }
 
@@ -1838,6 +1828,29 @@ button.btn-ghost:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   padding-top: 18px;
+}
+
+.cup-celebrate {
+  animation: cup-celebrate-pop 900ms ease-out;
+}
+
+@keyframes cup-celebrate-pop {
+  0% {
+    transform: scale(0.85);
+  }
+  40% {
+    transform: scale(1.18);
+    filter: drop-shadow(0 0 22px var(--champion-glow));
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cup-celebrate {
+    animation: none;
+  }
 }
 
 .cup-champion-badge .cup-team-avatar {
