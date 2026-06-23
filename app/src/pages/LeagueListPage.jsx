@@ -6,7 +6,8 @@ import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import PlayerCountRing from "../components/PlayerCountRing";
 import Spinner from "../components/Spinner";
-import { Inbox, Hourglass, Flag } from "lucide-react";
+import PageHeader from "../components/PageHeader";
+import { Inbox, Hourglass, Flag, UserCheck } from "lucide-react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
@@ -61,11 +62,16 @@ export default function LeagueListPage() {
     }
   }
 
-  const filtered = leagues?.filter((l) => l.status === tab) ?? [];
+  // ลีคที่เราเข้าร่วมแล้วขึ้นก่อนในแต่ละแท็บ (เรียงแค่ลำดับแสดงผล ไม่กระทบข้อมูลใต้ฐาน)
+  const filtered = (leagues?.filter((l) => l.status === tab) ?? []).slice().sort((a, b) => {
+    const aJoined = a.playerIds.includes(user.uid);
+    const bJoined = b.playerIds.includes(user.uid);
+    return aJoined === bJoined ? 0 : aJoined ? -1 : 1;
+  });
 
   return (
     <div className="page">
-      <h1>ลีคทั้งหมด</h1>
+      <PageHeader title="ลีคทั้งหมด" />
 
       <nav className="tabs-underline">
         {TABS.map((t) => (
@@ -108,7 +114,10 @@ export default function LeagueListPage() {
           const isCup = league.format === "cup";
 
           return (
-            <li key={league.id} className="league-card surface-glass surface-glass-interactive">
+            <li
+              key={league.id}
+              className={`league-card surface-glass surface-glass-interactive ${joined ? "league-card-joined" : ""}`}
+            >
               <Link to={`/leagues/${league.id}`} className="league-card-link">
                 <div className="league-card-badges">
                   <span className={`chip ${isCup ? "chip-accent" : "chip-accent-2"}`}>
@@ -116,6 +125,12 @@ export default function LeagueListPage() {
                     {FORMAT_LABEL[league.format]}
                   </span>
                   <span className="chip">{MATCH_TYPE_LABEL[league.matchType]}</span>
+                  {joined && (
+                    <span className="league-card-joined-badge">
+                      <UserCheck size={12} aria-hidden="true" />
+                      เข้าร่วมแล้ว
+                    </span>
+                  )}
                 </div>
                 <span className="league-card-title">{league.name}</span>
               </Link>

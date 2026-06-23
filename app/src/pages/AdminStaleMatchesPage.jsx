@@ -4,7 +4,7 @@ import { subscribeToScheduledMatches } from "../firebase/matches";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
-import BackLink from "../components/BackLink";
+import PageHeader from "../components/PageHeader";
 import { CheckCircle2 } from "lucide-react";
 
 export default function AdminStaleMatchesPage() {
@@ -17,7 +17,7 @@ export default function AdminStaleMatchesPage() {
 
   return (
     <div className="page">
-      <BackLink to="/">แผงแอดมิน</BackLink>
+      <PageHeader backTo="/" backLabel="แผงแอดมิน" />
       <h1>แมตช์ค้าง (ยังไม่มีใครส่งผล)</h1>
       <p>รายการนี้เป็นข้อมูลประกอบการตัดสินใจเท่านั้น ไม่ต้องลงมือก็ได้ — เผื่ออยากติดตามว่าใครยังไม่แข่ง</p>
 

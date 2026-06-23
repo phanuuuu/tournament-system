@@ -4,6 +4,7 @@ import { updateUserProfile } from "../firebase/users";
 import { uploadProfilePhoto } from "../firebase/storageHelpers";
 import { generateRandomAvatar } from "../utils/avatar";
 import Spinner from "../components/Spinner";
+import PageHeader from "../components/PageHeader";
 
 const URL_PATTERN = /^https?:\/\/.+/i;
 
@@ -79,7 +80,7 @@ export default function ProfilePage() {
 
   return (
     <div className="auth-page">
-      <h1>โปรไฟล์ของฉัน</h1>
+      <PageHeader title="โปรไฟล์ของฉัน" />
       <form onSubmit={handleSubmit}>
         <div className="avatar-edit-row">
           {photoURL && <img src={photoURL} alt="รูปโปรไฟล์" width={88} height={88} className="profile-photo-preview" />}

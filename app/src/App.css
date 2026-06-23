@@ -12,6 +12,78 @@
   color: var(--text-muted);
 }
 
+/* ===== Page header (BackLink/title ฝั่งซ้าย, action+ปุ่มหน้าหลัก ฝั่งขวา — ใช้ร่วมทุกหน้า) ===== */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.page-header-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.page-header-left h1 {
+  margin: 0;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.page-header-actions .btn-link {
+  margin-top: 0;
+}
+
+.home-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 8px 12px;
+  background: var(--surface);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--glow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-theme),
+    border-color var(--transition-theme);
+}
+
+.home-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glow-md);
+  border-color: var(--border-strong);
+}
+
+.home-button:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.home-button-label {
+  display: none;
+}
+
+@media (min-width: 480px) {
+  .home-button-label {
+    display: inline;
+  }
+}
+
 /* ===== Layout ===== */
 .app-shell {
   min-height: 100vh;
@@ -545,6 +617,27 @@ button.btn-ghost:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* ลีคที่เราเข้าร่วมแล้ว — ขอบ/แสงเข้มขึ้นกว่าลีคทั่วไป ให้กวาดตาเจอทันที */
+.league-card-joined {
+  border-color: var(--accent);
+  box-shadow: var(--glow-md);
+  background: var(--surface-2);
+}
+
+.league-card-joined-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  box-shadow: var(--glow-sm);
+  white-space: nowrap;
 }
 
 .league-card-link {

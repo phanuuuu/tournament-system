@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { createLeague, isValidLeagueSize } from "../firebase/leagues";
 import Spinner from "../components/Spinner";
+import PageHeader from "../components/PageHeader";
 
 const CUP_SIZES = [4, 8, 16, 32, 64];
 
@@ -58,7 +59,7 @@ export default function AdminCreateLeaguePage() {
 
   return (
     <div className="page">
-      <h1>สร้างลีคใหม่</h1>
+      <PageHeader title="สร้างลีคใหม่" />
       <form onSubmit={handleSubmit}>
         <label>
           ชื่อลีค *

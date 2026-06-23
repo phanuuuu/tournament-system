@@ -13,7 +13,7 @@ import StatusBadge from "../components/StatusBadge";
 import Spinner from "../components/Spinner";
 import ScoreStepper from "../components/ScoreStepper";
 import { roundLabel } from "../utils/roundLabel";
-import BackLink from "../components/BackLink";
+import PageHeader from "../components/PageHeader";
 
 function Avatar({ photoURL, name }) {
   return photoURL ? (
@@ -216,7 +216,7 @@ export default function MatchPage() {
 
   return (
     <div className="page">
-      <BackLink to={`/leagues/${match.leagueId}`}>กลับลีค</BackLink>
+      <PageHeader backTo={`/leagues/${match.leagueId}`} backLabel="กลับลีค" />
 
       <div className="match-header">
         <div className="match-header-top">

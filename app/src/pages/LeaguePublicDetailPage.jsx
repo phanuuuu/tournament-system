@@ -7,7 +7,7 @@ import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import { useAuth } from "../context/AuthContext";
 import LeagueResultsView from "../components/LeagueResultsView";
 import Spinner from "../components/Spinner";
-import BackLink from "../components/BackLink";
+import PageHeader from "../components/PageHeader";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
 const MATCH_TYPE_LABEL = { single: "แมตช์เดียว", homeAway: "เหย้า-เยือน" };
@@ -31,7 +31,7 @@ export default function LeaguePublicDetailPage() {
 
   return (
     <div className="page-wide">
-      <BackLink to="/leagues">ลีคทั้งหมด</BackLink>
+      <PageHeader backTo="/leagues" backLabel="ลีคทั้งหมด" />
       <h1>{league.name}</h1>
       <p>
         {FORMAT_LABEL[league.format]} ({MATCH_TYPE_LABEL[league.matchType]}) ·{" "}

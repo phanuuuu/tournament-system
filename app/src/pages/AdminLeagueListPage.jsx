@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { subscribeToLeagues } from "../firebase/leagues";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
+import PageHeader from "../components/PageHeader";
 import { Trophy } from "lucide-react";
 
 const FORMAT_LABEL = { cup: "ชิงถ้วย", points: "เก็บแต้ม" };
@@ -16,10 +17,14 @@ export default function AdminLeagueListPage() {
 
   return (
     <div className="page">
-      <h1>ลีคทั้งหมด</h1>
-      <Link to="/admin/leagues/new" className="btn-primary btn-link">
-        + สร้างลีคใหม่
-      </Link>
+      <PageHeader
+        title="ลีคทั้งหมด"
+        actions={
+          <Link to="/admin/leagues/new" className="btn-primary btn-link">
+            + สร้างลีคใหม่
+          </Link>
+        }
+      />
 
       {leagues === null && (
         <ul className="league-list">

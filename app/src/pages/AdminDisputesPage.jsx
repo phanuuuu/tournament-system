@@ -12,7 +12,7 @@ import { usePublicProfiles } from "../hooks/usePublicProfiles";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/EmptyState";
 import Spinner from "../components/Spinner";
-import BackLink from "../components/BackLink";
+import PageHeader from "../components/PageHeader";
 import { ShieldCheck, Phone, Camera } from "lucide-react";
 
 export default function AdminDisputesPage() {
@@ -88,7 +88,7 @@ export default function AdminDisputesPage() {
 
   return (
     <div className="page">
-      <BackLink to="/admin/leagues">จัดการลีค</BackLink>
+      <PageHeader backTo="/admin/leagues" backLabel="จัดการลีค" />
       <h1>ข้อพิพาทและคำขอ</h1>
 
       <form onSubmit={handleSearch} className="inline-search-form">
