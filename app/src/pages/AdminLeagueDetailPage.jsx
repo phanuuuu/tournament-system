@@ -124,6 +124,31 @@ export default function AdminLeagueDetailPage() {
   if (league === undefined) return <div className="page-loader"><Spinner size="lg" /></div>;
   if (league === null) return <p>ไม่พบลีคนี้</p>;
 
+  const playerListEl = (
+    <ul className="league-list">
+      {league.playerIds.map((uid) => (
+        <li key={uid}>
+          <span>
+            {profiles[uid]?.displayName ?? "กำลังโหลด..."}
+            {byeBans[uid]?.active && <span className="status-badge status-orange"> แพ้บาย</span>}
+          </span>
+          <span className="row-actions">
+            {league.status === "open" && (
+              <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleKick(uid)}>
+                {busy && <Spinner size="sm" />} เตะออก
+              </button>
+            )}
+            {league.format === "points" && league.status === "ongoing" && (
+              <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleToggleBan(uid)}>
+                {busy && <Spinner size="sm" />} {byeBans[uid]?.active ? "เลิกแพ้บาย" : "แพ้บาย"}
+              </button>
+            )}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className="page-wide">
       <PageHeader backTo="/admin/leagues" backLabel="ลีคทั้งหมด" />
@@ -150,28 +175,7 @@ export default function AdminLeagueDetailPage() {
 
       {error && <p className="form-error">{error}</p>}
 
-      <ul className="league-list">
-        {league.playerIds.map((uid) => (
-          <li key={uid}>
-            <span>
-              {profiles[uid]?.displayName ?? "กำลังโหลด..."}
-              {byeBans[uid]?.active && <span className="status-badge status-orange"> แพ้บาย</span>}
-            </span>
-            <span className="row-actions">
-              {league.status === "open" && (
-                <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleKick(uid)}>
-                  {busy && <Spinner size="sm" />} เตะออก
-                </button>
-              )}
-              {league.format === "points" && league.status === "ongoing" && (
-                <button type="button" className="btn-ghost btn-sm" disabled={busy} onClick={() => handleToggleBan(uid)}>
-                  {busy && <Spinner size="sm" />} {byeBans[uid]?.active ? "เลิกแพ้บาย" : "แพ้บาย"}
-                </button>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {league.format !== "cup" && playerListEl}
 
       <div className="admin-actions">
         {league.status === "open" && (
@@ -206,6 +210,9 @@ export default function AdminLeagueDetailPage() {
         isAdmin
         onCreateTiebreaker={(a, b) => createTiebreakerMatch(leagueId, a, b)}
       />
+
+      {/* บอลถ้วย: ย้ายรายชื่อ (พร้อมปุ่มเตะออก/แพ้บาย) ลงล่างสุด เหมือนหน้าผู้เล่น */}
+      {league.format === "cup" && playerListEl}
     </div>
   );
 }

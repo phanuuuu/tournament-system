@@ -19,12 +19,7 @@ export default function LeagueResultsView({ league, matches, profiles, byeBans, 
           onCreateTiebreaker={onCreateTiebreaker}
         />
       ) : (
-        <BracketView
-          matches={matches}
-          profiles={profiles}
-          currentRound={league.currentRound}
-          bracketSize={league.size}
-        />
+        <BracketView matches={matches} profiles={profiles} bracketSize={league.size} leagueStatus={league.status} />
       )}
 
       <button type="button" onClick={() => setShowRaw((v) => !v)}>

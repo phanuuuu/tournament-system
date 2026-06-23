@@ -1,159 +1,233 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Crown } from "lucide-react";
+import { computeBracketLayout, scoreLabel, winnerUidOf } from "../utils/bracketLayout";
 import { roundLabel } from "../utils/roundLabel";
+import CupTrophy from "./CupTrophy";
 
-const UNIT_PX = 92; // ความสูงต่อช่องของรอบแรก — รอบหลัง ๆ จะเว้นห่างเป็น 2x, 4x, ... ของค่านี้โดยอัตโนมัติ
-const CELEBRATE_MS = 1600;
+const UNIT_PX = 96; // ความสูงต่อช่องของรอบแรกฝั่งใดฝั่งหนึ่ง (รอบลึกขึ้นเว้นห่างเป็น 2x, 4x, ... อัตโนมัติด้วย justify-content: space-around)
 
-function scoreLabel(side, m) {
-  if (m.status === "walkover") return null;
-  if (m.status !== "approved") return "-";
-  const score = side === "home" ? m.approvedResult.scoreHome : m.approvedResult.scoreAway;
-  const penalty = side === "home" ? m.approvedResult.penaltyHome : m.approvedResult.penaltyAway;
-  return penalty != null ? `${score} (${penalty})` : `${score}`;
+function winnerSideOf(m) {
+  const uid = winnerUidOf(m);
+  if (uid == null) return null;
+  return uid === m.players.home ? "home" : "away";
 }
 
-function winnerSide(m) {
-  if (m.status === "walkover") return m.walkover.winnerUid === m.players.home ? "home" : "away";
-  if (m.status !== "approved") return null;
-  const { scoreHome, scoreAway, penaltyHome, penaltyAway } = m.approvedResult;
-  if (scoreHome !== scoreAway) return scoreHome > scoreAway ? "home" : "away";
-  if (penaltyHome != null) return penaltyHome > penaltyAway ? "home" : "away";
-  return null;
+function TeamAvatar({ photoURL, name }) {
+  return photoURL ? (
+    <img src={photoURL} alt="" className="cup-team-avatar" />
+  ) : (
+    <span className="cup-team-avatar cup-team-avatar-fallback" aria-hidden="true">
+      {name?.[0] ?? "?"}
+    </span>
+  );
 }
 
-function isSettled(status) {
-  return status === "approved" || status === "walkover";
-}
-
-export default function BracketView({ matches, profiles, currentRound, bracketSize }) {
-  const { user } = useAuth();
-  const prevStatusRef = useRef({});
-  const [justResolved, setJustResolved] = useState({});
-  const [justAdvanced, setJustAdvanced] = useState({});
-
-  const rounds = {};
-  for (const m of matches) {
-    if (m.kind !== "regular" || m.round == null) continue;
-    rounds[m.round] = rounds[m.round] ?? [];
-    rounds[m.round].push(m);
+function TeamRow({ profile, label, isWinner, isChampionSide, placeholder }) {
+  if (placeholder) {
+    return (
+      <div className="cup-team cup-team-placeholder">
+        <div className="cup-team-top">
+          <span className="cup-team-avatar cup-team-avatar-fallback" aria-hidden="true">
+            ?
+          </span>
+        </div>
+        <span className="cup-team-name">รอทีม</span>
+      </div>
+    );
   }
-  const roundNumbers = Object.keys(rounds)
-    .map(Number)
-    .sort((a, b) => a - b);
-  for (const round of roundNumbers) rounds[round].sort((a, b) => a.slot - b.slot);
+  return (
+    <div className={`cup-team ${isWinner ? "cup-team-winner" : ""} ${isChampionSide ? "cup-team-champion-side" : ""}`}>
+      <div className="cup-team-top">
+        <TeamAvatar photoURL={profile?.photoURL} name={profile?.displayName} />
+        <span className="cup-team-score">{label}</span>
+      </div>
+      <span className="cup-team-name">{profile?.displayName ?? "..."}</span>
+    </div>
+  );
+}
 
-  const firstRound = roundNumbers[0];
-  const totalHeight = UNIT_PX * (rounds[firstRound]?.length ?? 1);
-  const unitFor = (round) => totalHeight / (rounds[round]?.length ?? 1);
-
-  // ตรวจแมตช์ที่เพิ่งจบสด ๆ (เทียบ status รอบนี้กับรอบก่อน) เพื่อเล่นแอนิเมชัน "ติดไฟ" ที่การ์ด
-  // และ "เส้นเชื่อมวิ่ง" ที่ connector ของแมตช์รอบถัดไป (ถ้าสร้างขึ้นมาแล้ว)
-  useEffect(() => {
-    const prev = prevStatusRef.current;
-    const resolvedIds = [];
-    for (const m of matches) {
-      if (m.kind !== "regular") continue;
-      const p = prev[m.id];
-      if (p != null && !isSettled(p) && isSettled(m.status)) resolvedIds.push(m);
-    }
-
-    if (resolvedIds.length > 0) {
-      const advancedNextIds = [];
-      for (const m of resolvedIds) {
-        const nextRound = rounds[m.round + 1];
-        const nextMatch = nextRound?.find((nm) => nm.slot === Math.floor(m.slot / 2));
-        if (nextMatch) advancedNextIds.push(nextMatch.id);
-      }
-
-      setJustResolved((old) => {
-        const next = { ...old };
-        for (const m of resolvedIds) next[m.id] = true;
-        return next;
-      });
-      setJustAdvanced((old) => {
-        const next = { ...old };
-        for (const id of advancedNextIds) next[id] = true;
-        return next;
-      });
-
-      const clearIds = resolvedIds.map((m) => m.id);
-      setTimeout(() => {
-        setJustResolved((old) => {
-          const next = { ...old };
-          for (const id of clearIds) delete next[id];
-          return next;
-        });
-        setJustAdvanced((old) => {
-          const next = { ...old };
-          for (const id of advancedNextIds) delete next[id];
-          return next;
-        });
-      }, CELEBRATE_MS);
-    }
-
-    const nextPrev = {};
-    for (const m of matches) if (m.kind === "regular") nextPrev[m.id] = m.status;
-    prevStatusRef.current = nextPrev;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matches]);
-
-  function isOnPlayerPath(m) {
-    return m.players.home === user.uid || m.players.away === user.uid;
+function MatchBox({ slot, profiles, championUid }) {
+  const { match } = slot;
+  if (!match) {
+    return (
+      <div className="cup-match cup-match-placeholder">
+        <TeamRow placeholder />
+        <TeamRow placeholder />
+      </div>
+    );
   }
+  const winner = winnerSideOf(match);
+  const winnerUid = winner === "home" ? match.players.home : winner === "away" ? match.players.away : null;
+  const isChampionMatch = championUid != null && winnerUid === championUid;
+  return (
+    <Link to={`/matches/${match.id}`} className="cup-match">
+      <TeamRow
+        profile={profiles[match.players.home]}
+        label={scoreLabel("home", match)}
+        isWinner={winner === "home"}
+        isChampionSide={isChampionMatch && winner === "home"}
+      />
+      <TeamRow
+        profile={profiles[match.players.away]}
+        label={scoreLabel("away", match)}
+        isWinner={winner === "away"}
+        isChampionSide={isChampionMatch && winner === "away"}
+      />
+      {match.status === "walkover" && (
+        <div className="cup-match-walkover">ชนะบาย: {profiles[match.walkover.winnerUid]?.displayName}</div>
+      )}
+    </Link>
+  );
+}
+
+// เส้นตรงเชื่อมรอบรองชนะเลิศของแต่ละฝั่งเข้าสู่รอบชิงกลางจอ (ฝั่งละ 1 คู่เท่านั้นเสมอ ไม่มีกิ่งซ้อนแบบ Connector ปกติ)
+function TailConnector({ championPath }) {
+  return (
+    <div className={`cup-tail-connector ${championPath ? "cup-connector-champion" : ""}`} aria-hidden="true">
+      <span className="cup-tail-line" />
+    </div>
+  );
+}
+
+// เส้นเชื่อมระหว่างรอบ — ฝั่งซ้ายเรียงรอบเข้ากลาง (ปกติ), ฝั่งขวาเรียงรอบเข้ากลางแบบกลับทาง (mirror ด้วย CSS scaleX เดียวกัน)
+function Connector({ height, championPath, mirror }) {
+  return (
+    <div
+      className={`cup-connector ${championPath ? "cup-connector-champion" : ""} ${mirror ? "cup-connector-mirror" : ""}`}
+      style={{ height }}
+      aria-hidden="true"
+    >
+      <span className="cup-connector-top" />
+      <span className="cup-connector-bottom" />
+      <span className="cup-connector-vert" />
+      <span className="cup-connector-out" />
+    </div>
+  );
+}
+
+function SideColumn({ rounds, bracketSize, profiles, championUid, sideHeight, mirror }) {
+  const unitFor = (slotCount) => sideHeight / slotCount;
 
   return (
-    <div className="bracket-view">
-      <div className="bracket-scroll">
-        {roundNumbers.map((round) => (
-          <div key={round} className={`bracket-round ${round === currentRound ? "bracket-round-current" : ""}`}>
-            <h3>{roundLabel(bracketSize, round)}</h3>
-            <div className="bracket-slots" style={{ height: totalHeight }}>
-              {rounds[round].map((m) => {
-                const isFirstRound = round === firstRound;
-                const winner = winnerSide(m);
-                const mine = isOnPlayerPath(m);
-                const resolved = !!justResolved[m.id];
-                const advanced = !!justAdvanced[m.id];
+    <div className={`cup-side ${mirror ? "cup-side-right" : "cup-side-left"}`} style={{ height: sideHeight }}>
+      {rounds.map((r, colIdx) => {
+        const isOutermost = mirror ? colIdx === rounds.length - 1 : colIdx === 0;
+        return (
+          <div key={r.round} className="cup-round-col">
+            <h3>{roundLabel(bracketSize, r.round)}</h3>
+            <div className="cup-round-slots" style={{ height: sideHeight }}>
+              {r.slots.map((slot) => {
+                const prevSlotCount = r.slots.length * 2;
+                const championPath = championUid != null && slot.match && winnerUidOf(slot.match) === championUid;
                 return (
-                  <div key={m.id} className="bracket-slot">
-                    {!isFirstRound && (
-                      <div
-                        className={`bracket-connector ${mine ? "bracket-connector-mine" : ""} ${
-                          advanced ? "bracket-connector-run" : ""
-                        }`}
-                        style={{ height: unitFor(round - 1) }}
-                        aria-hidden="true"
-                      >
-                        <span className="bracket-connector-top" />
-                        <span className="bracket-connector-bottom" />
-                        <span className="bracket-connector-vert" />
-                        <span className="bracket-connector-out" />
-                      </div>
+                  <div key={slot.slot} className="cup-slot">
+                    {!isOutermost && !mirror && <Connector height={unitFor(prevSlotCount)} championPath={championPath} />}
+                    <MatchBox slot={slot} profiles={profiles} championUid={championUid} />
+                    {!isOutermost && mirror && (
+                      <Connector height={unitFor(prevSlotCount)} championPath={championPath} mirror />
                     )}
-                    <Link
-                      to={`/matches/${m.id}`}
-                      className={`bracket-match ${mine ? "bracket-match-mine" : ""} ${
-                        resolved ? "bracket-match-resolved" : ""
-                      }`}
-                    >
-                      <div className={winner === "home" ? "bracket-side-winner" : ""}>
-                        {profiles[m.players.home]?.displayName ?? "..."} {scoreLabel("home", m)}
-                      </div>
-                      <div className={winner === "away" ? "bracket-side-winner" : ""}>
-                        {profiles[m.players.away]?.displayName ?? "..."} {scoreLabel("away", m)}
-                      </div>
-                      {m.status === "walkover" && (
-                        <div className="bracket-walkover">ชนะบาย: {profiles[m.walkover.winnerUid]?.displayName}</div>
-                      )}
-                    </Link>
                   </div>
                 );
               })}
             </div>
           </div>
-        ))}
+        );
+      })}
+    </div>
+  );
+}
+
+export default function BracketView({ matches, profiles, bracketSize, leagueStatus }) {
+  const layout = computeBracketLayout(matches, bracketSize);
+  const { leftRounds, rightRounds, finalSlot, championUid, totalRounds } = layout;
+  const [mobileSide, setMobileSide] = useState("both");
+
+  const sideRound1Count = bracketSize / 4; // round 1 ของแต่ละฝั่ง (ครึ่งหนึ่งของ round 1 ทั้งหมด)
+  const sideHeight = UNIT_PX * Math.max(sideRound1Count, 1);
+  const champion = championUid ? profiles[championUid] : null;
+  const isFinished = leagueStatus === "finished";
+
+  const leftSemi = leftRounds[leftRounds.length - 1]?.slots[0];
+  const rightSemi = rightRounds[0]?.slots[0];
+  const leftTailChampion = championUid != null && leftSemi?.match && winnerUidOf(leftSemi.match) === championUid;
+  const rightTailChampion = championUid != null && rightSemi?.match && winnerUidOf(rightSemi.match) === championUid;
+
+  return (
+    <div className="cup-bracket">
+      {totalRounds > 1 && (
+        <div className="cup-bracket-mobile-toggle">
+          <button
+            type="button"
+            className={mobileSide === "left" ? "tab-active" : ""}
+            onClick={() => setMobileSide("left")}
+          >
+            สายซ้าย
+          </button>
+          <button
+            type="button"
+            className={mobileSide === "both" ? "tab-active" : ""}
+            onClick={() => setMobileSide("both")}
+          >
+            ทั้งหมด
+          </button>
+          <button
+            type="button"
+            className={mobileSide === "right" ? "tab-active" : ""}
+            onClick={() => setMobileSide("right")}
+          >
+            สายขวา
+          </button>
+        </div>
+      )}
+
+      <div className="cup-bracket-scroll">
+        <div className={`cup-bracket-row cup-bracket-mobile-${mobileSide}`}>
+          {leftRounds.length > 0 && (
+            <SideColumn
+              rounds={leftRounds}
+              bracketSize={bracketSize}
+              profiles={profiles}
+              championUid={championUid}
+              sideHeight={sideHeight}
+              mirror={false}
+            />
+          )}
+          {leftRounds.length > 0 && finalSlot && <TailConnector championPath={leftTailChampion} />}
+
+          <div className="cup-center" style={{ minHeight: sideHeight }}>
+            <div className="cup-center-champion">
+              {champion ? (
+                <div className="cup-champion-badge">
+                  <Crown size={28} className="cup-champion-crown" aria-hidden="true" />
+                  <TeamAvatar photoURL={champion.photoURL} name={champion.displayName} />
+                </div>
+              ) : (
+                <div className="cup-champion-placeholder" aria-hidden="true" />
+              )}
+            </div>
+            <CupTrophy lit={isFinished} size={84} />
+            {champion && <span className="cup-champion-name">{champion.displayName}</span>}
+            {finalSlot && (
+              <div className="cup-round-col cup-final-col">
+                <h3>{roundLabel(bracketSize, finalSlot.round)}</h3>
+                <MatchBox slot={finalSlot} profiles={profiles} championUid={championUid} />
+              </div>
+            )}
+          </div>
+          {rightRounds.length > 0 && finalSlot && <TailConnector championPath={rightTailChampion} />}
+
+          {rightRounds.length > 0 && (
+            <SideColumn
+              rounds={rightRounds}
+              bracketSize={bracketSize}
+              profiles={profiles}
+              championUid={championUid}
+              sideHeight={sideHeight}
+              mirror
+            />
+          )}
+        </div>
       </div>
     </div>
   );

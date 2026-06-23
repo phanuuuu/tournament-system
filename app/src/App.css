@@ -1546,99 +1546,124 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 /* ===== Bracket ===== */
-.bracket-view {
+/* ===== ถ้วย (cup) bracket แบบ UCL — สองสายซ้าย-ขวาวิ่งเข้าหาถ้วยกลางจอ ===== */
+.cup-bracket {
   position: relative;
   margin-top: 12px;
 }
 
-.bracket-scroll {
-  display: flex;
-  gap: 0;
+.cup-bracket-mobile-toggle {
+  display: none;
+  gap: 6px;
+  margin-bottom: 10px;
+  justify-content: center;
+}
+
+.cup-bracket-mobile-toggle button {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cup-bracket-mobile-toggle button.tab-active {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cup-bracket-scroll {
   overflow-x: auto;
-  padding: 4px 4px 16px;
-  scroll-snap-type: x proximity;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  overflow-y: hidden;
+  padding: 8px 4px 20px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 
-.bracket-round {
-  min-width: 230px;
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  padding: 6px 10px;
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-theme), box-shadow var(--transition-theme);
+.cup-bracket-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: max-content;
+  margin: 0 auto;
 }
 
-.bracket-round h3 {
-  font-size: 13px;
+.cup-side {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.cup-round-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 132px;
+  flex-shrink: 0;
+}
+
+.cup-round-col h3 {
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-align: center;
   margin: 0 0 8px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
-.bracket-round-current {
-  background: var(--surface);
-  box-shadow: var(--glow-sm);
-}
-
-.bracket-round-current h3 {
-  color: var(--accent);
-  text-shadow: 0 0 8px var(--accent);
-}
-
-.bracket-slots {
+.cup-round-slots {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
 }
 
-.bracket-slot {
+.cup-slot {
   display: flex;
   align-items: center;
 }
 
-/* ===== เส้นเชื่อมสาย (คำนวณตำแหน่งล้วน ไม่ต้องวัด DOM — ดูคอมเมนต์ BracketView.jsx) ===== */
-.bracket-connector {
+/* ===== เส้นเชื่อมระหว่างรอบ — ฝั่งขวาใช้ scaleX(-1) กลับทางจากฝั่งซ้ายตัวเดียวกัน ===== */
+.cup-connector {
   position: relative;
-  width: 26px;
+  width: 24px;
   flex-shrink: 0;
 }
 
-.bracket-connector-top,
-.bracket-connector-bottom,
-.bracket-connector-vert,
-.bracket-connector-out {
+.cup-connector-top,
+.cup-connector-bottom,
+.cup-connector-vert,
+.cup-connector-out {
   position: absolute;
-  background: var(--border-strong);
-  box-shadow: 0 0 4px var(--accent);
+  background: var(--accent);
+  opacity: 0.5;
 }
 
-.bracket-connector-top,
-.bracket-connector-bottom {
+.cup-connector-top,
+.cup-connector-bottom {
   left: 0;
   width: 50%;
   height: 2px;
 }
 
-.bracket-connector-top {
+.cup-connector-top {
   top: 0;
 }
 
-.bracket-connector-bottom {
+.cup-connector-bottom {
   bottom: 0;
 }
 
-.bracket-connector-vert {
+.cup-connector-vert {
   left: 50%;
   top: 0;
   bottom: 0;
   width: 2px;
 }
 
-.bracket-connector-out {
+.cup-connector-out {
   left: 50%;
   top: 50%;
   width: 50%;
@@ -1646,103 +1671,251 @@ button.btn-ghost:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
-.bracket-connector-mine .bracket-connector-top,
-.bracket-connector-mine .bracket-connector-bottom,
-.bracket-connector-mine .bracket-connector-vert,
-.bracket-connector-mine .bracket-connector-out {
-  background: var(--accent-2);
-  box-shadow: 0 0 7px var(--accent-2);
+.cup-connector-mirror {
+  transform: scaleX(-1);
 }
 
-.bracket-match {
-  display: block;
+.cup-connector-champion .cup-connector-top,
+.cup-connector-champion .cup-connector-bottom,
+.cup-connector-champion .cup-connector-vert,
+.cup-connector-champion .cup-connector-out {
+  background: var(--champion-color);
+  opacity: 1;
+  box-shadow: 0 0 8px var(--champion-glow);
+}
+
+/* เส้นตรงรอบรองชนะเลิศ -> รอบชิงกลางจอ (ฝั่งละ 1 เส้นเสมอ ไม่มีกิ่ง) */
+.cup-tail-connector {
+  width: 20px;
+  height: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.cup-tail-line {
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+}
+
+.cup-tail-connector.cup-connector-champion .cup-tail-line {
+  background: var(--champion-color);
+  opacity: 1;
+  box-shadow: 0 0 8px var(--champion-glow);
+}
+
+/* ===== กล่องแมตช์ + การ์ดทีม (อวาตาร์วงกลม + ชื่อใต้ภาพ + สกอร์) ===== */
+.cup-match {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: 13px;
-  text-decoration: none;
-  color: var(--text);
   background: var(--surface);
   box-shadow: var(--glow-sm);
+  text-decoration: none;
+  overflow: hidden;
   transition: transform var(--transition-fast), box-shadow var(--transition-theme),
     border-color var(--transition-theme);
 }
 
-.bracket-match:hover {
+.cup-match:hover {
   transform: translateY(-1px);
   box-shadow: var(--glow-md);
 }
 
-.bracket-match-mine {
-  border-color: var(--accent-2);
-  box-shadow: var(--glow-2-sm);
+.cup-match-placeholder {
+  border-style: dashed;
+  opacity: 0.55;
+  box-shadow: none;
 }
 
-.bracket-side-winner {
+.cup-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 6px;
+}
+
+.cup-team:first-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.cup-team-top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.cup-team-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.cup-team-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text-muted);
   font-weight: 700;
-  color: var(--status-green);
-  text-shadow: 0 0 6px rgba(34, 229, 132, 0.5);
+  font-size: 12px;
 }
 
-.bracket-walkover {
-  display: inline-block;
-  font-size: 11px;
+.cup-team-score {
+  position: absolute;
+  right: 4px;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.cup-team-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
   font-weight: 600;
+  font-size: 11px;
+}
+
+.cup-team-winner .cup-team-name,
+.cup-team-winner .cup-team-score {
+  color: var(--status-green);
+  font-weight: 800;
+}
+
+.cup-team-champion-side .cup-team-name,
+.cup-team-champion-side .cup-team-score {
+  color: var(--champion-color);
+  text-shadow: 0 0 6px var(--champion-glow);
+}
+
+.cup-team-placeholder .cup-team-name {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.cup-match-walkover {
+  font-size: 10px;
+  text-align: center;
+  padding: 2px 4px 5px;
   color: var(--status-orange);
-  background: transparent;
-  border: 1px solid var(--status-orange);
-  border-radius: var(--radius-pill);
-  padding: 1px 8px;
-  margin-top: 4px;
 }
 
-/* ===== สายถ้วยขึ้นรอบสด ๆ — โหนดผู้ชนะติดไฟ + เส้นเชื่อมวิ่งไปรอบถัดไป ===== */
-.bracket-match-resolved {
-  animation: bracket-match-pop 700ms ease-out;
+/* ===== ถ้วยกลางจอ + แชมป์ ===== */
+.cup-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  flex-shrink: 0;
 }
 
-@keyframes bracket-match-pop {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(34, 229, 132, 0);
-  }
-  35% {
-    transform: scale(1.03);
-    box-shadow: 0 0 16px 3px rgba(34, 229, 132, 0.55);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: var(--glow-sm);
-  }
+.cup-center-champion {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.bracket-connector-run .bracket-connector-top,
-.bracket-connector-run .bracket-connector-bottom,
-.bracket-connector-run .bracket-connector-vert,
-.bracket-connector-run .bracket-connector-out {
-  animation: bracket-connector-run 1000ms ease-out;
+.cup-champion-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 18px;
 }
 
-@keyframes bracket-connector-run {
-  0% {
-    box-shadow: 0 0 4px var(--accent);
-  }
-  45% {
-    box-shadow: 0 0 16px 4px var(--accent), 0 0 8px var(--accent-2);
-  }
-  100% {
-    box-shadow: 0 0 4px var(--accent);
-  }
+.cup-champion-badge .cup-team-avatar {
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--champion-color);
+  box-shadow: 0 0 18px var(--champion-glow);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bracket-match-resolved,
-  .bracket-connector-run .bracket-connector-top,
-  .bracket-connector-run .bracket-connector-bottom,
-  .bracket-connector-run .bracket-connector-vert,
-  .bracket-connector-run .bracket-connector-out {
-    animation: none;
+.cup-champion-badge .cup-team-avatar-fallback {
+  font-size: 22px;
+}
+
+.cup-champion-crown {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--champion-color);
+  filter: drop-shadow(0 0 6px var(--champion-glow));
+}
+
+.cup-champion-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px dashed var(--border);
+  opacity: 0.4;
+}
+
+.cup-champion-name {
+  font-weight: 800;
+  color: var(--champion-color);
+  font-size: 13px;
+  text-shadow: 0 0 8px var(--champion-glow);
+}
+
+.cup-final-col {
+  min-width: 128px;
+}
+
+.cup-trophy {
+  filter: drop-shadow(0 0 10px var(--trophy-glow));
+  transition: filter 500ms ease;
+}
+
+.cup-trophy-lit {
+  filter: drop-shadow(0 0 22px var(--champion-glow)) drop-shadow(0 0 8px var(--champion-glow));
+}
+
+.cup-trophy-stroke {
+  stroke: var(--trophy-edge);
+}
+
+.cup-trophy-stop-1 {
+  stop-color: var(--trophy-light);
+}
+
+.cup-trophy-stop-2 {
+  stop-color: var(--trophy-mid);
+}
+
+.cup-trophy-stop-3 {
+  stop-color: var(--trophy-shadow);
+}
+
+/* ===== มือถือ: ปุ่มสลับดูทีละสาย (ซ่อนสายที่ไม่ได้เลือก เหลือศูนย์กลาง+อีกสายเสมอ) ===== */
+@media (max-width: 720px) {
+  .cup-bracket-mobile-toggle {
+    display: flex;
+  }
+
+  .cup-bracket-mobile-left .cup-side-right {
+    display: none;
+  }
+
+  .cup-bracket-mobile-right .cup-side-left {
+    display: none;
   }
 }
 
