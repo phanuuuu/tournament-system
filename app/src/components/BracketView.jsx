@@ -96,7 +96,8 @@ function buildMatchSegments(round, slot, match, championUid, geometry, isFinal) 
       { key: `${round}-${slot}-skel-away`, d: elbow(edgeOf(awayPos, awayGoesRight), junction), colorState: "dim", round, phase: "A" },
     ];
     if (nextPos) {
-      segments.push({ key: `${round}-${slot}-skel-next`, d: elbow(junction, nextPos), colorState: "dim", round, phase: "B" });
+      const nextEdge = edgeOf(nextPos, junction.x > nextPos.x);
+      segments.push({ key: `${round}-${slot}-skel-next`, d: elbow(junction, nextEdge), colorState: "dim", round, phase: "B" });
     }
     return segments;
   }
@@ -127,9 +128,10 @@ function buildMatchSegments(round, slot, match, championUid, geometry, isFinal) 
   ];
 
   if (nextPos) {
+    const nextEdge = edgeOf(nextPos, junction.x > nextPos.x);
     segments.push({
       key: `${round}-${slot}-winner-b`,
-      d: elbow(junction, nextPos),
+      d: elbow(junction, nextEdge),
       colorState: isChampionPath ? "champion" : "alive",
       round,
       phase: "B",
