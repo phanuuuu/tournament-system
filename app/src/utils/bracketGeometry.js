@@ -3,10 +3,11 @@
 // ทำให้จุดบรรจบอยู่กึ่งกลางพอดีเสมอ เส้นเชื่อมเป็นเส้นตรง/ฉากไม่มีวกไปวกมา (ไม่แตะ logic การจับคู่/คำนวณผลใด ๆ)
 
 export const NODE_SPACING = 96; // ระยะห่างแนวตั้งระหว่างโหนดติดกันในรอบนอกสุด (รอบ 1)
-export const COLUMN_SPACING = 168; // ระยะห่างแนวนอนระหว่างคอลัมน์รอบ
+export const COLUMN_SPACING = 130; // ระยะห่างแนวนอนระหว่างคอลัมน์รอบ — บีบเข้ามาจาก 168 ให้กระชับขึ้น (ทุกคอลัมน์เท่ากันหมด)
 export const NODE_RADIUS = 20;
+export const EDGE_PADDING = 28; // กันโหนดคอลัมน์ซ้ายสุด/ขวาสุดโดนตัดครึ่งวง — ศูนย์กลางโหนดต้องไม่ชนขอบผ้าใบเป๊ะ
 // แยกสองค่านี้ออกจากกัน — เดิมใช้ค่าเดียว (FINAL_GAP) ทั้งคู่ ทำให้ผู้เล่นนัดชิงสองคนห่างกันแค่ NODE_RADIUS*2 (~40px) ติดกันเกินไป
-const SEMI_TO_FINAL_GAP = 84; // ระยะจากคอลัมน์รอบรองสุดท้ายถึงโหนดนัดชิง (แคบกว่า COLUMN_SPACING ปกติ ไม่ให้เส้นยาวเกินจำเป็น)
+const SEMI_TO_FINAL_GAP = COLUMN_SPACING / 2; // เท่ากันเป็นสัดส่วนเดียวกับคอลัมน์อื่น ๆ (ครึ่งของ COLUMN_SPACING) ไม่ให้ดูยาว/สั้นผิดที่
 const FINALIST_GAP = 150; // ระยะระหว่างผู้เล่นนัดชิงสองคน (ให้ถ้วย+มงกุฎมีที่อยู่ตรงกลางพอดี ไม่ดูอัดกัน)
 
 // rounds ต้องเรียงจากรอบนอกสุด (มากทีมสุด) ไปรอบในสุดก่อนรอบชิง — คืน nodeY คีย์ "${round}-${slot}-${home|away}"
@@ -71,12 +72,14 @@ export function computeBracketGeometry(layout) {
   const leftWidth = leftColCount * COLUMN_SPACING;
   const rightWidth = rightColCount * COLUMN_SPACING;
   const centerWidth = SEMI_TO_FINAL_GAP * 2 + FINALIST_GAP;
-  const totalWidth = leftWidth + centerWidth + rightWidth;
+  // เผื่อ EDGE_PADDING ทั้งสองข้าง กันโหนดคอลัมน์นอกสุดโดนตัดครึ่งวง (ศูนย์กลางโหนดอยู่ที่ขอบเป๊ะไม่ได้ ต้องมีที่ให้อีกครึ่งวงด้วย)
+  const innerWidth = leftWidth + centerWidth + rightWidth;
+  const totalWidth = innerWidth + EDGE_PADDING * 2;
 
   const positions = {}; // key: "${round}-${slot}-${home|away}" -> {x, y} (รวม final ด้วยคีย์ round นั้น slot 0)
 
   leftRounds.forEach((r, colIdx) => {
-    const x = colIdx * COLUMN_SPACING;
+    const x = EDGE_PADDING + colIdx * COLUMN_SPACING;
     for (const slot of r.slots) {
       positions[`${r.round}-${slot.slot}-home`] = { x, y: leftShifted.nodeY[`${r.round}-${slot.slot}-home`] };
       positions[`${r.round}-${slot.slot}-away`] = { x, y: leftShifted.nodeY[`${r.round}-${slot.slot}-away`] };
@@ -86,7 +89,7 @@ export function computeBracketGeometry(layout) {
   rightRounds.forEach((r, colIdxFromCenter) => {
     // rightRounds เรียงในสุดไปนอกสุด (ดูคอมเมนต์ computeBracketLayout) — col นับจากนอกสุดของฝั่งขวา
     const colIdxFromOutermost = rightColCount - 1 - colIdxFromCenter;
-    const x = totalWidth - colIdxFromOutermost * COLUMN_SPACING;
+    const x = totalWidth - EDGE_PADDING - colIdxFromOutermost * COLUMN_SPACING;
     for (const slot of r.slots) {
       positions[`${r.round}-${slot.slot}-home`] = { x, y: rightShifted.nodeY[`${r.round}-${slot.slot}-home`] };
       positions[`${r.round}-${slot.slot}-away`] = { x, y: rightShifted.nodeY[`${r.round}-${slot.slot}-away`] };
@@ -94,7 +97,7 @@ export function computeBracketGeometry(layout) {
   });
 
   if (finalSlot) {
-    const homeX = leftWidth + SEMI_TO_FINAL_GAP;
+    const homeX = EDGE_PADDING + leftWidth + SEMI_TO_FINAL_GAP;
     const awayX = homeX + FINALIST_GAP;
     positions[`${finalSlot.round}-0-home`] = { x: homeX, y: centerY };
     positions[`${finalSlot.round}-0-away`] = { x: awayX, y: centerY };

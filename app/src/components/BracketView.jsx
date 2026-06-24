@@ -11,7 +11,7 @@ import CupTrophy from "./CupTrophy";
 const PHASE_A_MS = 3000; // ทุกคนในรอบวิ่งจากรูป -> จุดบรรจบ พร้อมกัน
 const PHASE_B_MS = 500; // ผู้ชนะเลี้ยวออกจากจุดบรรจบ -> รูปรอบถัดไป
 const CELEBRATE_MS = 900;
-const HEADER_HEIGHT = 44; // เผื่อที่ให้ label หัวรอบไม่ทับขอบบนของรูปโปรไฟล์แถวแรก
+const HEADER_HEIGHT = 64; // เผื่อที่ให้ label หัวรอบไม่ทับขอบบนของรูปโปรไฟล์แถวแรก (เดิม 44 ยังไม่พอ)
 const BOTTOM_PADDING = 36; // เผื่อพื้นที่ด้านล่างผัง ไม่ให้รอบสุดท้าย/ชื่อผู้เล่นอยู่ติดขอบจนอึดอัด
 
 function TeamAvatar({ photoURL, name }) {
