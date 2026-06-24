@@ -1575,25 +1575,6 @@ button.btn-ghost:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-.cup-skip-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 10px auto 0;
-  padding: 7px 16px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.cup-skip-btn:hover {
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
 .cup-bracket-scroll {
   overflow-x: auto;
   overflow-y: hidden;
@@ -1626,12 +1607,13 @@ button.btn-ghost:hover:not(:disabled) {
 
 .cup-path {
   fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
-  opacity: 0.6;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
   transition-property: stroke-dashoffset;
+  transition-duration: 600ms;
   transition-timing-function: ease-out;
 }
 
@@ -1644,11 +1626,26 @@ button.btn-ghost:hover:not(:disabled) {
   transition-delay: 0ms !important;
 }
 
+/* เรืองแสง = ยังไม่ตกรอบ ณ จุดนั้น */
+.cup-path-alive {
+  stroke: var(--accent);
+  opacity: 0.85;
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+
+/* จาง/ทึบ = แพ้/ตกรอบที่จุดนี้ */
+.cup-path-dim {
+  stroke: var(--text-muted);
+  opacity: 0.35;
+  stroke-width: 2;
+}
+
+/* แชมป์ = เส้นทุกช่วงเรืองแสงแรงพิเศษทั้งเส้น */
 .cup-path-champion {
   stroke: var(--champion-color);
-  stroke-width: 2.5;
+  stroke-width: 3;
   opacity: 1;
-  filter: drop-shadow(0 0 4px var(--champion-glow));
+  filter: drop-shadow(0 0 6px var(--champion-glow));
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1694,112 +1691,119 @@ button.btn-ghost:hover:not(:disabled) {
   align-items: center;
 }
 
-/* ===== กล่องแมตช์ + การ์ดทีม (อวาตาร์วงกลม + ชื่อใต้ภาพ + สกอร์) ===== */
-.cup-match {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  box-shadow: var(--glow-sm);
-  text-decoration: none;
-  overflow: hidden;
-  transition: transform var(--transition-fast), box-shadow var(--transition-theme),
-    border-color var(--transition-theme);
-}
-
-.cup-match:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--glow-md);
-}
-
-.cup-match-placeholder {
-  border-style: dashed;
-  opacity: 0.55;
-  box-shadow: none;
-}
-
-.cup-team {
+/* ===== คู่แมตช์ + โหนดผู้เล่น (วงกลมลอย ไม่มีกล่องครอบ ตามดีไซน์ใหม่) ===== */
+.cup-match-pair {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 7px 6px;
+  gap: 28px;
+  width: 100%;
 }
 
-.cup-team:first-child {
-  border-bottom: 1px solid var(--border);
+.cup-node-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
 }
 
-.cup-team-top {
+/* พื้นที่กดเข้าแมตช์ — โปร่งใสล้วน ไม่มีขอบ/พื้นให้เห็น */
+.cup-node-hitarea {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  z-index: 2;
+}
+
+.cup-node {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
+  border-radius: 50%;
+  z-index: 1;
 }
 
-.cup-team-avatar {
-  width: 32px;
-  height: 32px;
+.cup-node-avatar {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
+  background: var(--surface-2);
   flex-shrink: 0;
+  transition: border-color var(--transition-theme), box-shadow var(--transition-theme);
 }
 
-.cup-team-avatar-fallback {
+.cup-node-avatar-fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-2);
   color: var(--text-muted);
   font-weight: 700;
-  font-size: 12px;
-}
-
-.cup-team-score {
-  position: absolute;
-  right: 4px;
-  font-weight: 800;
   font-size: 13px;
-  color: var(--text-muted);
 }
 
-.cup-team-name {
-  max-width: 100%;
+.cup-node-score {
+  position: absolute;
+  bottom: -4px;
+  right: -8px;
+  min-width: 18px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.cup-node-name {
+  max-width: 78px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text);
   font-weight: 600;
   font-size: 11px;
+  text-align: center;
 }
 
-.cup-team-winner .cup-team-name,
-.cup-team-winner .cup-team-score {
-  color: var(--status-green);
-  font-weight: 800;
+.cup-node-alive .cup-node-avatar {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
 }
 
-.cup-team-champion-side .cup-team-name,
-.cup-team-champion-side .cup-team-score {
-  color: var(--champion-color);
-  text-shadow: 0 0 6px var(--champion-glow);
+.cup-node-champion .cup-node-avatar {
+  border-color: var(--champion-color);
+  box-shadow: 0 0 10px var(--champion-glow);
 }
 
-.cup-team-placeholder .cup-team-name {
+.cup-node-eliminated .cup-node-avatar {
+  border-color: var(--border);
+  opacity: 0.55;
+}
+
+.cup-node-eliminated .cup-node-name {
+  color: var(--text-muted);
+}
+
+.cup-node-placeholder .cup-node-avatar {
+  border-style: dashed;
+  opacity: 0.45;
+}
+
+.cup-node-placeholder ~ .cup-node-name {
   color: var(--text-muted);
   font-style: italic;
-  font-size: 11px;
-}
-
-.cup-match-walkover {
-  font-size: 10px;
-  text-align: center;
-  padding: 2px 4px 5px;
-  color: var(--status-orange);
 }
 
 /* ===== ถ้วยกลางจอ + แชมป์ ===== */
@@ -1853,14 +1857,14 @@ button.btn-ghost:hover:not(:disabled) {
   }
 }
 
-.cup-champion-badge .cup-team-avatar {
+.cup-champion-badge .cup-node-avatar {
   width: 56px;
   height: 56px;
   border: 2px solid var(--champion-color);
   box-shadow: 0 0 18px var(--champion-glow);
 }
 
-.cup-champion-badge .cup-team-avatar-fallback {
+.cup-champion-badge .cup-node-avatar-fallback {
   font-size: 22px;
 }
 
@@ -1888,8 +1892,14 @@ button.btn-ghost:hover:not(:disabled) {
   text-shadow: 0 0 8px var(--champion-glow);
 }
 
-.cup-final-col {
-  min-width: 128px;
+.cup-final-node-col {
+  min-width: 70px;
+}
+
+.cup-final-node-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .cup-trophy {
@@ -1923,11 +1933,13 @@ button.btn-ghost:hover:not(:disabled) {
     display: flex;
   }
 
-  .cup-bracket-mobile-left .cup-side-right {
+  .cup-bracket-mobile-left .cup-side-right,
+  .cup-bracket-mobile-left .cup-final-node-col-right {
     display: none;
   }
 
-  .cup-bracket-mobile-right .cup-side-left {
+  .cup-bracket-mobile-right .cup-side-left,
+  .cup-bracket-mobile-right .cup-final-node-col-left {
     display: none;
   }
 }
