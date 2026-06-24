@@ -1552,36 +1552,11 @@ button.btn-ghost:hover:not(:disabled) {
   margin-top: 12px;
 }
 
-/* ===== กรอบซูม/แพน ===== */
-.cup-zoom-wrapper {
-  width: 100%;
-  height: 480px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  overflow: hidden;
-  /* อนุญาตเลื่อนหน้าแนวตั้งด้วยนิ้วเดียวตามปกติ — ไลบรารีจะจัดการ pinch (สองนิ้ว) กับลากแนวนอนเอง */
-  touch-action: pan-y;
-}
-
-@media (min-width: 720px) {
-  .cup-zoom-wrapper {
-    height: 600px;
-  }
-}
-
-.cup-zoom-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
 .cup-bracket-mobile-toggle {
-  display: flex;
+  display: none;
   gap: 6px;
+  margin-bottom: 10px;
+  justify-content: center;
 }
 
 .cup-bracket-mobile-toggle button {
@@ -1594,36 +1569,24 @@ button.btn-ghost:hover:not(:disabled) {
   font-weight: 600;
 }
 
-.cup-zoom-buttons {
-  display: flex;
-  gap: 6px;
-  margin-left: auto;
+.cup-bracket-mobile-toggle button.tab-active {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
-.cup-zoom-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
+/* เลื่อนแนวนอนตามปกติ — ผังกว้างเท่าที่ต้องใช้จริง ไม่บีบ ไม่ clip ใครหลุดขอบ ความสูงไหลตามหน้าปกติ (ไม่ตัด) */
+.cup-bracket-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 8px 4px 4px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
 }
 
-.cup-zoom-btn:hover {
-  border-color: var(--border-strong);
-}
-
-/* ผ้าใบจริง — ขนาดเท่าที่ผังต้องใช้จริง ไม่บีบ ไม่ clip ใครหลุดขอบ */
 .cup-canvas {
   position: relative;
-}
-
-.cup-half-marker {
-  position: absolute;
-  pointer-events: none;
+  margin: 0 auto;
 }
 
 .cup-round-label {
@@ -1922,6 +1885,12 @@ button.btn-ghost:hover:not(:disabled) {
   stop-color: var(--trophy-shadow);
 }
 
+/* ===== มือถือ: ปุ่มสลับเลื่อนไปดูทีละสาย (ผ้าใบเต็มขนาดจริงเสมอ ปุ่มแค่ช่วยเลื่อนสกอลล์ไปจุดนั้น) ===== */
+@media (max-width: 720px) {
+  .cup-bracket-mobile-toggle {
+    display: flex;
+  }
+}
 
 /* ===== Admin dashboard ===== */
 .dashboard-card {
