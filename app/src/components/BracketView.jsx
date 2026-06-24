@@ -1,16 +1,19 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown } from "lucide-react";
+import { Crown, Maximize2, LocateFixed, Plus, Minus } from "lucide-react";
+import { TransformWrapper, TransformComponent, useControls } from "react-zoom-pan-pinch";
 import { computeBracketLayout, isSettled, nodeState, scoreLabel, winnerUidOf } from "../utils/bracketLayout";
+import { computeBracketGeometry, NODE_RADIUS } from "../utils/bracketGeometry";
 import { roundLabel } from "../utils/roundLabel";
 import { prefersReducedMotion } from "../utils/animationPrefs";
+import { useAuth } from "../context/AuthContext";
 import CupTrophy from "./CupTrophy";
 
-const NODE_RADIUS = 20;
-const FALLBACK_SPACING = 160; // ใช้ตอนยังวัดระยะห่างคอลัมน์จริงไม่ได้ (เช่น เพิ่งโหลด ยังไม่มีคู่ไหนผ่านรอบเลย)
 const PHASE_A_MS = 3000; // ทุกคนในรอบวิ่งจากรูป -> จุดบรรจบ พร้อมกัน
 const PHASE_B_MS = 500; // ผู้ชนะเลี้ยวออกจากจุดบรรจบ -> รูปรอบถัดไป
 const CELEBRATE_MS = 900;
+const MOBILE_BREAKPOINT = 720;
+const HEADER_HEIGHT = 28;
 
 function TeamAvatar({ photoURL, name }) {
   return photoURL ? (
@@ -22,80 +25,31 @@ function TeamAvatar({ photoURL, name }) {
   );
 }
 
-function PlayerNode({ round, uid, profile, label, matchId, state, registerNode }) {
-  if (!uid) {
-    return (
-      <div className="cup-node-wrap">
-        <div className="cup-node cup-node-placeholder">
+function PlayerNode({ pos, uid, profile, label, matchId, state, isMe, nodeRef }) {
+  const placeholder = !uid;
+  return (
+    <div className="cup-node-wrap" style={{ left: pos.x, top: pos.y + HEADER_HEIGHT }}>
+      {!placeholder && (
+        <Link to={`/matches/${matchId}`} className="cup-node-hitarea" aria-label={profile?.displayName ?? "ผู้เล่น"} />
+      )}
+      <div
+        className={`cup-node ${state ? `cup-node-${state}` : ""} ${isMe ? "cup-node-me" : ""} ${
+          placeholder ? "cup-node-placeholder" : ""
+        }`}
+        ref={nodeRef}
+      >
+        {placeholder ? (
           <span className="cup-node-avatar cup-node-avatar-fallback" aria-hidden="true">
             ?
           </span>
-        </div>
-        <span className="cup-node-name">รอทีม</span>
-      </div>
-    );
-  }
-  return (
-    <div className="cup-node-wrap">
-      <Link to={`/matches/${matchId}`} className="cup-node-hitarea" aria-label={profile?.displayName ?? "ผู้เล่น"} />
-      <div className={`cup-node ${state ? `cup-node-${state}` : ""}`} ref={(el) => registerNode(`${round}-${uid}`, el)}>
-        <TeamAvatar photoURL={profile?.photoURL} name={profile?.displayName} />
+        ) : (
+          <TeamAvatar photoURL={profile?.photoURL} name={profile?.displayName} />
+        )}
         {label != null && <span className="cup-node-score">{label}</span>}
       </div>
-      <span className="cup-node-name">{profile?.displayName ?? "..."}</span>
-    </div>
-  );
-}
-
-function MatchPair({ round, slot, profiles, championUid, registerNode }) {
-  const { match } = slot;
-  if (!match) {
-    return (
-      <div className="cup-match-pair">
-        <PlayerNode registerNode={registerNode} />
-        <PlayerNode registerNode={registerNode} />
-      </div>
-    );
-  }
-  return (
-    <div className="cup-match-pair">
-      <PlayerNode
-        round={round}
-        uid={match.players.home}
-        profile={profiles[match.players.home]}
-        label={scoreLabel("home", match)}
-        matchId={match.id}
-        state={nodeState(match.players.home, match, championUid)}
-        registerNode={registerNode}
-      />
-      <PlayerNode
-        round={round}
-        uid={match.players.away}
-        profile={profiles[match.players.away]}
-        label={scoreLabel("away", match)}
-        matchId={match.id}
-        state={nodeState(match.players.away, match, championUid)}
-        registerNode={registerNode}
-      />
-    </div>
-  );
-}
-
-function SideColumn({ side, rounds, bracketSize, profiles, championUid, sideHeight, registerNode }) {
-  return (
-    <div className={`cup-side cup-side-${side}`} style={{ height: sideHeight }}>
-      {rounds.map((r) => (
-        <div key={r.round} className="cup-round-col">
-          <h3>{roundLabel(bracketSize, r.round)}</h3>
-          <div className="cup-round-slots" style={{ height: sideHeight }}>
-            {r.slots.map((slot) => (
-              <div key={slot.slot} className="cup-slot">
-                <MatchPair round={r.round} slot={slot} profiles={profiles} championUid={championUid} registerNode={registerNode} />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+      <span className={`cup-node-name ${placeholder ? "cup-node-name-placeholder" : ""}`}>
+        {placeholder ? "รอทีม" : profile?.displayName ?? "..."}
+      </span>
     </div>
   );
 }
@@ -105,147 +59,156 @@ function elbow(from, to) {
   return `M ${from.x} ${from.y} L ${to.x} ${from.y} L ${to.x} ${to.y}`;
 }
 
-// แมตช์ฝั่งซ้าย/ขวา ออกจากขอบรูปเข้าหากึ่งกลาง (ซ้ายออกขวา, ขวาออกซ้าย) ส่วนรอบชิงสองคนออกเข้าหากันตรงกลาง
-function buildMatchSegments(round, slot, side, championUid, positions, spacing, isFinal) {
-  const { match } = slot;
+function edgeOf(pos, goesRight) {
+  return { x: pos.x + (goesRight ? NODE_RADIUS : -NODE_RADIUS), y: pos.y };
+}
+
+// แมตช์หนึ่งคู่ -> ช่วงเส้นที่เกี่ยวข้อง (ผู้แพ้จบที่จุดบรรจบ, ผู้ชนะเลี้ยวออกไปรอบถัดไปถ้ามี)
+// ทิศที่จะออกจากขอบรูปคำนวณจากตำแหน่งจริงเทียบกับจุดบรรจบ (ไม่ต้องรู้ฝั่งซ้าย/ขวาล่วงหน้า)
+function buildMatchSegments(round, slot, match, championUid, geometry, totalRounds, isFinal) {
   if (!match || !isSettled(match.status)) return [];
   const homeUid = match.players.home;
-  const awayUid = match.players.away;
-  const homePos = positions[`${round}-${homeUid}`];
-  const awayPos = positions[`${round}-${awayUid}`];
+  const homePos = geometry.positions[`${round}-${slot}-home`];
+  const awayPos = geometry.positions[`${round}-${slot}-away`];
   if (!homePos || !awayPos) return [];
 
   const winnerUid = winnerUidOf(match);
   if (winnerUid == null) return [];
-  const loserUid = winnerUid === homeUid ? awayUid : homeUid;
   const winnerPos = winnerUid === homeUid ? homePos : awayPos;
   const loserPos = winnerUid === homeUid ? awayPos : homePos;
   const isChampionPath = winnerUid === championUid;
 
   let junction;
+  let nextPos = null;
   if (isFinal) {
     junction = { x: (homePos.x + awayPos.x) / 2, y: (homePos.y + awayPos.y) / 2 };
-  } else if (side === "left") {
-    junction = { x: homePos.x + spacing / 2, y: (homePos.y + awayPos.y) / 2 };
   } else {
-    junction = { x: homePos.x - spacing / 2, y: (homePos.y + awayPos.y) / 2 };
+    nextPos = geometry.positions[`${round + 1}-${Math.floor(slot / 2)}-${slot % 2 === 0 ? "home" : "away"}`];
+    const targetX = nextPos ? nextPos.x : homePos.x;
+    junction = { x: (homePos.x + targetX) / 2, y: (homePos.y + awayPos.y) / 2 };
   }
 
-  // ขอบรูปที่จะออกเส้น — ฝั่งซ้าย/ผู้เข้าชิงฝั่งซ้ายออกขวา, ฝั่งขวา/ผู้เข้าชิงฝั่งขวาออกซ้าย (เข้าหากึ่งกลางเสมอ)
-  const edgeOf = (pos, uid) => {
-    const goesRight = isFinal ? uid === homeUid : side === "left";
-    return { x: pos.x + (goesRight ? NODE_RADIUS : -NODE_RADIUS), y: pos.y };
-  };
+  const winnerGoesRight = junction.x > winnerPos.x;
+  const loserGoesRight = junction.x > loserPos.x;
 
   const segments = [
     {
       key: `${match.id}-loser`,
-      d: elbow(edgeOf(loserPos, loserUid), junction),
+      d: elbow(edgeOf(loserPos, loserGoesRight), junction),
       colorState: "dim",
       round,
       phase: "A",
     },
     {
       key: `${match.id}-winner-a`,
-      d: elbow(edgeOf(winnerPos, winnerUid), junction),
+      d: elbow(edgeOf(winnerPos, winnerGoesRight), junction),
       colorState: isChampionPath ? "champion" : "alive",
       round,
       phase: "A",
     },
   ];
 
-  if (!isFinal) {
-    const nextPos = positions[`${round + 1}-${winnerUid}`];
-    if (nextPos) {
-      segments.push({
-        key: `${match.id}-winner-b`,
-        d: elbow(junction, nextPos),
-        colorState: isChampionPath ? "champion" : "alive",
-        round,
-        phase: "B",
-      });
-    }
+  if (!isFinal && nextPos) {
+    segments.push({
+      key: `${match.id}-winner-b`,
+      d: elbow(junction, nextPos),
+      colorState: isChampionPath ? "champion" : "alive",
+      round,
+      phase: "B",
+    });
   }
 
   return segments;
 }
 
-export default function BracketView({ matches, profiles, bracketSize, leagueStatus }) {
-  const layout = useMemo(() => computeBracketLayout(matches, bracketSize), [matches, bracketSize]);
-  const { leftRounds, rightRounds, finalSlot, championUid, totalRounds } = layout;
-  const [mobileSide, setMobileSide] = useState("both");
+function ZoomToolbar({ canvasRef, leftHalfRef, rightHalfRef, myNodeRef, hasMe, totalRounds }) {
+  const { zoomIn, zoomOut, zoomToElement } = useControls();
 
-  const sideRound1Count = bracketSize / 4;
-  const sideHeight = 100 * Math.max(sideRound1Count, 1);
+  return (
+    <div className="cup-zoom-toolbar">
+      {totalRounds > 1 && (
+        <div className="cup-bracket-mobile-toggle">
+          <button type="button" onClick={() => leftHalfRef.current && zoomToElement(leftHalfRef.current)}>
+            สายซ้าย
+          </button>
+          <button type="button" onClick={() => canvasRef.current && zoomToElement(canvasRef.current)}>
+            ทั้งหมด
+          </button>
+          <button type="button" onClick={() => rightHalfRef.current && zoomToElement(rightHalfRef.current)}>
+            สายขวา
+          </button>
+        </div>
+      )}
+      <div className="cup-zoom-buttons">
+        <button type="button" className="cup-zoom-btn" onClick={() => zoomOut()} aria-label="ซูมออก">
+          <Minus size={16} />
+        </button>
+        <button type="button" className="cup-zoom-btn" onClick={() => zoomIn()} aria-label="ซูมเข้า">
+          <Plus size={16} />
+        </button>
+        <button
+          type="button"
+          className="cup-zoom-btn"
+          onClick={() => canvasRef.current && zoomToElement(canvasRef.current)}
+          aria-label="ดูทั้งสาย"
+        >
+          <Maximize2 size={16} />
+        </button>
+        {hasMe && (
+          <button
+            type="button"
+            className="cup-zoom-btn"
+            onClick={() => myNodeRef.current && zoomToElement(myNodeRef.current, 1.6, 500)}
+            aria-label="โฟกัสที่ฉัน"
+          >
+            <LocateFixed size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function InitialFit({ canvasRef, leftHalfRef }) {
+  const { zoomToElement } = useControls();
+  useEffect(() => {
+    const target = window.innerWidth < MOBILE_BREAKPOINT ? leftHalfRef.current : canvasRef.current;
+    if (target) zoomToElement(target, undefined, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
+}
+
+export default function BracketView({ matches, profiles, bracketSize, leagueStatus }) {
+  const { user } = useAuth();
+  const layout = useMemo(() => computeBracketLayout(matches, bracketSize), [matches, bracketSize]);
+  const { roundsSkeleton, finalSlot, championUid, totalRounds } = layout;
+  const geometry = useMemo(() => computeBracketGeometry(layout), [layout]);
+
   const champion = championUid ? profiles[championUid] : null;
   const isFinished = leagueStatus === "finished";
 
   const [skipAnimation] = useState(() => prefersReducedMotion());
-  const [positions, setPositions] = useState({});
   const [drawnKeys, setDrawnKeys] = useState(() => new Set());
   const [keyDelays, setKeyDelays] = useState({});
   const [celebrate, setCelebrate] = useState(false);
-  const nodeRefs = useRef(new Map());
-  const trophyRef = useRef(null);
-  const containerRef = useRef(null);
   const prevChampionRef = useRef(undefined);
   const drawnKeysRef = useRef(new Set());
-
-  function registerNode(key, el) {
-    if (!key) return;
-    if (el) nodeRefs.current.set(key, el);
-    else nodeRefs.current.delete(key);
-  }
-
-  // วัดตำแหน่งโหนดจริงหลัง render (responsive ตรง) — รีวัดตอน resize/รอบเปลี่ยน/สลับมุมมองมือถือด้วย
-  useLayoutEffect(() => {
-    function measure() {
-      const containerEl = containerRef.current;
-      if (!containerEl) return;
-      const containerRect = containerEl.getBoundingClientRect();
-      const next = {};
-      for (const [key, el] of nodeRefs.current) {
-        const r = el.getBoundingClientRect();
-        next[key] = { x: r.left - containerRect.left + r.width / 2, y: r.top - containerRect.top + r.height / 2 };
-      }
-      setPositions(next);
-    }
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (containerRef.current) ro.observe(containerRef.current);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [matches, mobileSide, bracketSize]);
-
-  // ระยะห่างคอลัมน์จริง (วัดจากคู่โหนดที่ผ่านรอบมาแล้วจริง ๆ) ใช้คำนวณตำแหน่งจุดบรรจบของคู่ที่ยังไม่มีรอบถัดไป
-  function findMeasuredSpacing() {
-    for (const r of leftRounds) {
-      for (const slot of r.slots) {
-        const uid = slot.match?.players.home;
-        if (!uid) continue;
-        const a = positions[`${r.round}-${uid}`];
-        const b = positions[`${r.round + 1}-${uid}`];
-        if (a && b) return Math.abs(b.x - a.x);
-      }
-    }
-    return FALLBACK_SPACING;
-  }
-  const spacing = findMeasuredSpacing();
+  const canvasRef = useRef(null);
+  const leftHalfRef = useRef(null);
+  const rightHalfRef = useRef(null);
+  const myNodeRef = useRef(null);
 
   const segmentList = useMemo(() => {
     const list = [];
-    for (const r of leftRounds) {
-      for (const slot of r.slots) list.push(...buildMatchSegments(r.round, slot, "left", championUid, positions, spacing, false));
+    for (const r of roundsSkeleton) {
+      const isFinal = r.round === totalRounds;
+      for (const slot of r.slots) {
+        list.push(...buildMatchSegments(r.round, slot.slot, slot.match, championUid, geometry, totalRounds, isFinal));
+      }
     }
-    for (const r of rightRounds) {
-      for (const slot of r.slots) list.push(...buildMatchSegments(r.round, slot, "right", championUid, positions, spacing, false));
-    }
-    if (finalSlot) list.push(...buildMatchSegments(finalSlot.round, finalSlot, "final", championUid, positions, spacing, true));
     return list;
-  }, [leftRounds, rightRounds, finalSlot, championUid, positions, spacing]);
+  }, [roundsSkeleton, championUid, geometry, totalRounds]);
 
   const allSegmentKeys = useMemo(() => segmentList.map((s) => s.key), [segmentList]);
   const allSegmentKeysJoined = allSegmentKeys.join(",");
@@ -281,7 +244,7 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allSegmentKeysJoined, skipAnimation]);
 
-  // ฉลองแชมป์ — เด้ง/เรืองตอนเส้นวิ่งถึงรอบชิงจบ (ครั้งแรกที่รู้ว่ามีแชมป์ ไม่ว่าจะตอนโหลดหน้าหรือสด ๆ ระหว่างดู)
+  // ฉลองแชมป์ — เด้ง/เรืองตอนเส้นวิ่งถึงรอบชิงจบ
   useEffect(() => {
     if (championUid == null || prevChampionRef.current === championUid) {
       prevChampionRef.current = championUid;
@@ -298,117 +261,171 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
     return () => clearTimeout(t);
   }, [championUid, skipAnimation, totalRounds]);
 
+  const hasMe = roundsSkeleton.some((r) =>
+    r.slots.some((s) => s.match && (s.match.players.home === user.uid || s.match.players.away === user.uid))
+  );
+
+  // หัวข้อรอบ (รอบ X ทีม) วางไว้บนสุดของแต่ละคอลัมน์ — เอาตำแหน่ง x จากโหนด home ของรอบนั้น (ทุก slot ในรอบเดียวกัน x เท่ากันอยู่แล้ว)
+  const columnHeaders = roundsSkeleton
+    .filter((r) => r.round !== totalRounds)
+    .map((r) => ({
+      round: r.round,
+      x: geometry.positions[`${r.round}-${r.slots[0].slot}-home`].x,
+    }));
+
+  // มือถือ/แท็บเล็ต (รองรับสัมผัส): ปิดลากนิ้วเดียว pan เนื้อผัง ให้เลื่อนหน้าทั้งหน้าแนวตั้งได้ปกติ —
+  // ซูมสองนิ้ว (pinch) เป็นโค้ดคนละเส้นทางในไลบรารี ไม่ถูกปิดไปด้วย ส่วนเมาส์/แทร็กแพดเดสก์ท็อปยังลาก pan ได้ตามปกติ
+  const isTouchDevice = typeof window !== "undefined" && (("ontouchstart" in window) || navigator.maxTouchPoints > 0);
+
   return (
     <div className="cup-bracket">
-      {totalRounds > 1 && (
-        <div className="cup-bracket-mobile-toggle">
-          <button type="button" className={mobileSide === "left" ? "tab-active" : ""} onClick={() => setMobileSide("left")}>
-            สายซ้าย
-          </button>
-          <button type="button" className={mobileSide === "both" ? "tab-active" : ""} onClick={() => setMobileSide("both")}>
-            ทั้งหมด
-          </button>
-          <button type="button" className={mobileSide === "right" ? "tab-active" : ""} onClick={() => setMobileSide("right")}>
-            สายขวา
-          </button>
-        </div>
-      )}
-
-      <div className="cup-bracket-scroll">
-        <div className={`cup-bracket-row cup-bracket-mobile-${mobileSide}`} ref={containerRef}>
-          <svg className="cup-paths-svg" aria-hidden="true">
-            {segmentList.map(({ key, d, colorState, phase }) => (
-              <path
-                key={key}
-                d={d}
-                pathLength={1}
-                className={`cup-path cup-path-${colorState} ${drawnKeys.has(key) ? "cup-path-drawn" : ""} ${
-                  skipAnimation ? "cup-path-instant" : ""
-                }`}
-                style={{
-                  transitionDelay: `${keyDelays[key] ?? 0}ms`,
-                  transitionDuration: `${phase === "A" ? PHASE_A_MS : PHASE_B_MS}ms`,
-                }}
-              />
-            ))}
-          </svg>
-
-          {leftRounds.length > 0 && (
-            <SideColumn
-              side="left"
-              rounds={leftRounds}
-              bracketSize={bracketSize}
-              profiles={profiles}
-              championUid={championUid}
-              sideHeight={sideHeight}
-              registerNode={registerNode}
+      <TransformWrapper
+        initialScale={1}
+        minScale={0.2}
+        maxScale={2.5}
+        limitToBounds={false}
+        centerZoomedOut={false}
+        doubleClick={{ disabled: true }}
+        panning={{ disabled: isTouchDevice, velocityDisabled: true }}
+        wheel={{ step: 0.15 }}
+      >
+        <ZoomToolbar
+          canvasRef={canvasRef}
+          leftHalfRef={leftHalfRef}
+          rightHalfRef={rightHalfRef}
+          myNodeRef={myNodeRef}
+          hasMe={hasMe}
+          totalRounds={totalRounds}
+        />
+        <InitialFit canvasRef={canvasRef} leftHalfRef={leftHalfRef} />
+        <TransformComponent wrapperClass="cup-zoom-wrapper" contentClass="cup-zoom-content">
+          <div
+            className="cup-canvas"
+            ref={canvasRef}
+            style={{ width: geometry.totalWidth, height: geometry.totalHeight + HEADER_HEIGHT }}
+          >
+            <div
+              className="cup-half-marker"
+              ref={leftHalfRef}
+              style={{ left: 0, top: 0, width: geometry.trophyPos.x, height: geometry.totalHeight + HEADER_HEIGHT }}
+              aria-hidden="true"
             />
-          )}
+            <div
+              className="cup-half-marker"
+              ref={rightHalfRef}
+              style={{
+                left: geometry.trophyPos.x,
+                top: 0,
+                width: geometry.totalWidth - geometry.trophyPos.x,
+                height: geometry.totalHeight + HEADER_HEIGHT,
+              }}
+              aria-hidden="true"
+            />
 
-          {finalSlot && (
-            <div className="cup-round-col cup-final-node-col cup-final-node-col-left">
-              <h3>{roundLabel(bracketSize, finalSlot.round)}</h3>
-              <div className="cup-final-node-slot" style={{ height: sideHeight }}>
+            {columnHeaders.map(({ round, x }) => (
+              <span key={round} className="cup-round-label" style={{ left: x }}>
+                {roundLabel(bracketSize, round)}
+              </span>
+            ))}
+            <span className="cup-round-label" style={{ left: geometry.trophyPos.x }}>
+              {finalSlot ? roundLabel(bracketSize, finalSlot.round) : ""}
+            </span>
+
+            <svg className="cup-paths-svg" aria-hidden="true">
+              {segmentList.map(({ key, d, colorState, phase }) => (
+                <path
+                  key={key}
+                  d={d}
+                  pathLength={1}
+                  transform={`translate(0, ${HEADER_HEIGHT})`}
+                  className={`cup-path cup-path-${colorState} ${drawnKeys.has(key) ? "cup-path-drawn" : ""} ${
+                    skipAnimation ? "cup-path-instant" : ""
+                  }`}
+                  style={{
+                    transitionDelay: `${keyDelays[key] ?? 0}ms`,
+                    transitionDuration: `${phase === "A" ? PHASE_A_MS : PHASE_B_MS}ms`,
+                  }}
+                />
+              ))}
+            </svg>
+
+            {roundsSkeleton.map((r) => {
+              if (r.round === totalRounds) return null; // รอบชิง render แยกด้านล่าง
+              return r.slots.map((slot) => {
+                const homePos = geometry.positions[`${r.round}-${slot.slot}-home`];
+                const awayPos = geometry.positions[`${r.round}-${slot.slot}-away`];
+                const match = slot.match;
+                return (
+                  <div key={`${r.round}-${slot.slot}`} style={{ display: "contents" }}>
+                    <PlayerNode
+                      pos={homePos}
+                      uid={match?.players.home}
+                      profile={match ? profiles[match.players.home] : null}
+                      label={match ? scoreLabel("home", match) : null}
+                      matchId={match?.id}
+                      state={match ? nodeState(match.players.home, match, championUid) : null}
+                      isMe={!!match && match.players.home === user.uid}
+                      nodeRef={match && match.players.home === user.uid ? myNodeRef : undefined}
+                    />
+                    <PlayerNode
+                      pos={awayPos}
+                      uid={match?.players.away}
+                      profile={match ? profiles[match.players.away] : null}
+                      label={match ? scoreLabel("away", match) : null}
+                      matchId={match?.id}
+                      state={match ? nodeState(match.players.away, match, championUid) : null}
+                      isMe={!!match && match.players.away === user.uid}
+                      nodeRef={match && match.players.away === user.uid ? myNodeRef : undefined}
+                    />
+                  </div>
+                );
+              });
+            })}
+
+            {finalSlot && (
+              <>
                 <PlayerNode
-                  round={finalSlot.round}
+                  pos={geometry.positions[`${finalSlot.round}-0-home`]}
                   uid={finalSlot.match?.players.home}
-                  profile={finalSlot.match ? profiles[finalSlot.match.players.home] : undefined}
-                  label={finalSlot.match ? scoreLabel("home", finalSlot.match) : undefined}
+                  profile={finalSlot.match ? profiles[finalSlot.match.players.home] : null}
+                  label={finalSlot.match ? scoreLabel("home", finalSlot.match) : null}
                   matchId={finalSlot.match?.id}
                   state={finalSlot.match ? nodeState(finalSlot.match.players.home, finalSlot.match, championUid) : null}
-                  registerNode={registerNode}
+                  isMe={!!finalSlot.match && finalSlot.match.players.home === user.uid}
+                  nodeRef={finalSlot.match && finalSlot.match.players.home === user.uid ? myNodeRef : undefined}
                 />
-              </div>
-            </div>
-          )}
-
-          <div className="cup-center" style={{ minHeight: sideHeight }}>
-            <div className="cup-center-champion">
-              {champion ? (
-                <div className={`cup-champion-badge ${celebrate ? "cup-celebrate" : ""}`}>
-                  <Crown size={28} className="cup-champion-crown" aria-hidden="true" />
-                  <TeamAvatar photoURL={champion.photoURL} name={champion.displayName} />
-                </div>
-              ) : (
-                <div className="cup-champion-placeholder" aria-hidden="true" />
-              )}
-            </div>
-            <div ref={trophyRef} className={celebrate ? "cup-celebrate" : ""}>
-              <CupTrophy lit={isFinished} size={84} />
-            </div>
-            {champion && <span className="cup-champion-name">{champion.displayName}</span>}
-          </div>
-
-          {finalSlot && (
-            <div className="cup-round-col cup-final-node-col cup-final-node-col-right">
-              <h3>&nbsp;</h3>
-              <div className="cup-final-node-slot" style={{ height: sideHeight }}>
                 <PlayerNode
-                  round={finalSlot.round}
+                  pos={geometry.positions[`${finalSlot.round}-0-away`]}
                   uid={finalSlot.match?.players.away}
-                  profile={finalSlot.match ? profiles[finalSlot.match.players.away] : undefined}
-                  label={finalSlot.match ? scoreLabel("away", finalSlot.match) : undefined}
+                  profile={finalSlot.match ? profiles[finalSlot.match.players.away] : null}
+                  label={finalSlot.match ? scoreLabel("away", finalSlot.match) : null}
                   matchId={finalSlot.match?.id}
                   state={finalSlot.match ? nodeState(finalSlot.match.players.away, finalSlot.match, championUid) : null}
-                  registerNode={registerNode}
+                  isMe={!!finalSlot.match && finalSlot.match.players.away === user.uid}
+                  nodeRef={finalSlot.match && finalSlot.match.players.away === user.uid ? myNodeRef : undefined}
                 />
-              </div>
-            </div>
-          )}
+              </>
+            )}
 
-          {rightRounds.length > 0 && (
-            <SideColumn
-              side="right"
-              rounds={rightRounds}
-              bracketSize={bracketSize}
-              profiles={profiles}
-              championUid={championUid}
-              sideHeight={sideHeight}
-              registerNode={registerNode}
-            />
-          )}
-        </div>
-      </div>
+            <div className="cup-center" style={{ left: geometry.trophyPos.x, top: geometry.trophyPos.y + HEADER_HEIGHT }}>
+              <div className="cup-center-champion">
+                {champion ? (
+                  <div className={`cup-champion-badge ${celebrate ? "cup-celebrate" : ""}`}>
+                    <Crown size={28} className="cup-champion-crown" aria-hidden="true" />
+                    <TeamAvatar photoURL={champion.photoURL} name={champion.displayName} />
+                  </div>
+                ) : (
+                  <div className="cup-champion-placeholder" aria-hidden="true" />
+                )}
+              </div>
+              <div className={celebrate ? "cup-celebrate" : ""}>
+                <CupTrophy lit={isFinished} size={84} />
+              </div>
+              {champion && <span className="cup-champion-name">{champion.displayName}</span>}
+            </div>
+          </div>
+        </TransformComponent>
+      </TransformWrapper>
     </div>
   );
 }

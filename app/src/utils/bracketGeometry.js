@@ -1,0 +1,104 @@
+// คำนวณตำแหน่ง (x, y) ของทุกโหนด/จุดบรรจบในสายถ้วยล้วน ๆ ด้วยสูตรคณิตศาสตร์ตรง ๆ — ไม่วัด DOM เลย
+// หลักการ: รอบแรกสุด (นอกสุด) เรียงห่างเท่ากัน, รอบถัดไป Y ของโหนด = ค่าเฉลี่ย Y ของคู่รอบก่อนหน้าที่ป้อนเข้ามา
+// ทำให้จุดบรรจบอยู่กึ่งกลางพอดีเสมอ เส้นเชื่อมเป็นเส้นตรง/ฉากไม่มีวกไปวกมา (ไม่แตะ logic การจับคู่/คำนวณผลใด ๆ)
+
+export const NODE_SPACING = 96; // ระยะห่างแนวตั้งระหว่างโหนดติดกันในรอบนอกสุด (รอบ 1)
+export const COLUMN_SPACING = 168; // ระยะห่างแนวนอนระหว่างคอลัมน์รอบ
+export const NODE_RADIUS = 20;
+const FINAL_GAP = 110; // ระยะห่างจากคอลัมน์รอบรองสุดท้ายถึงโหนดรอบชิง (ฝั่งละข้าง คั่นด้วยถ้วยตรงกลาง)
+
+// rounds ต้องเรียงจากรอบนอกสุด (มากทีมสุด) ไปรอบในสุดก่อนรอบชิง — คืน nodeY คีย์ "${round}-${slot}-${home|away}"
+function computeSideYPositions(rounds) {
+  const nodeY = {};
+  const slotCenterY = {};
+  if (rounds.length === 0) return { nodeY, slotCenterY, totalHeight: 0 };
+
+  // ใช้ลำดับตำแหน่งในอาเรย์ (i) เป็นแนวตั้งจริง แต่คีย์ต้องใช้ slot.slot จริง (ฝั่งขวา slot ไม่เริ่มที่ 0 — index ในอาเรย์ ≠ slot number)
+  const firstRound = rounds[0];
+  firstRound.slots.forEach((slot, i) => {
+    const homeY = 2 * i * NODE_SPACING;
+    const awayY = (2 * i + 1) * NODE_SPACING;
+    nodeY[`${firstRound.round}-${slot.slot}-home`] = homeY;
+    nodeY[`${firstRound.round}-${slot.slot}-away`] = awayY;
+    slotCenterY[`${firstRound.round}-${slot.slot}`] = (homeY + awayY) / 2;
+  });
+
+  for (let i = 1; i < rounds.length; i++) {
+    const round = rounds[i];
+    const prevRound = rounds[i - 1];
+    for (const slot of round.slots) {
+      const homeY = slotCenterY[`${prevRound.round}-${slot.slot * 2}`];
+      const awayY = slotCenterY[`${prevRound.round}-${slot.slot * 2 + 1}`];
+      nodeY[`${round.round}-${slot.slot}-home`] = homeY;
+      nodeY[`${round.round}-${slot.slot}-away`] = awayY;
+      slotCenterY[`${round.round}-${slot.slot}`] = (homeY + awayY) / 2;
+    }
+  }
+
+  const totalHeight = (firstRound.slots.length * 2 - 1) * NODE_SPACING;
+  return { nodeY, slotCenterY, totalHeight };
+}
+
+// layout มาจาก computeBracketLayout (leftRounds/rightRounds/finalSlot/totalRounds)
+// คืนตำแหน่งทุกโหนดเป็นพิกัดเดียวกันทั้งภาพ (global) + ขนาดผ้าใบรวม ไว้ใช้ทั้งวาง node และวาดเส้น SVG
+export function computeBracketGeometry(layout) {
+  const { leftRounds, rightRounds, finalSlot, totalRounds } = layout;
+  const rightRoundsOutermostFirst = [...rightRounds].reverse();
+
+  const left = computeSideYPositions(leftRounds);
+  const right = computeSideYPositions(rightRoundsOutermostFirst);
+
+  const totalHeight = Math.max(left.totalHeight, right.totalHeight, NODE_SPACING);
+  const centerY = totalHeight / 2;
+
+  // เลื่อนแต่ละฝั่งให้กึ่งกลางตรงกันที่ centerY (เผื่อสองฝั่งจำนวนทีมไม่เท่ากัน แม้ปกติเท่ากันเสมอ)
+  function shiftToCenter(side) {
+    const sideCenterY = side.totalHeight / 2;
+    const offset = centerY - sideCenterY;
+    const shifted = {};
+    for (const [k, v] of Object.entries(side.nodeY)) shifted[k] = v + offset;
+    const shiftedCenters = {};
+    for (const [k, v] of Object.entries(side.slotCenterY)) shiftedCenters[k] = v + offset;
+    return { nodeY: shifted, slotCenterY: shiftedCenters };
+  }
+  const leftShifted = shiftToCenter(left);
+  const rightShifted = shiftToCenter(right);
+
+  const leftColCount = leftRounds.length;
+  const rightColCount = rightRounds.length;
+  const leftWidth = leftColCount * COLUMN_SPACING;
+  const rightWidth = rightColCount * COLUMN_SPACING;
+  const centerWidth = FINAL_GAP * 2 + NODE_RADIUS * 2;
+  const totalWidth = leftWidth + centerWidth + rightWidth;
+
+  const positions = {}; // key: "${round}-${slot}-${home|away}" -> {x, y} (รวม final ด้วยคีย์ round นั้น slot 0)
+
+  leftRounds.forEach((r, colIdx) => {
+    const x = colIdx * COLUMN_SPACING;
+    for (const slot of r.slots) {
+      positions[`${r.round}-${slot.slot}-home`] = { x, y: leftShifted.nodeY[`${r.round}-${slot.slot}-home`] };
+      positions[`${r.round}-${slot.slot}-away`] = { x, y: leftShifted.nodeY[`${r.round}-${slot.slot}-away`] };
+    }
+  });
+
+  rightRounds.forEach((r, colIdxFromCenter) => {
+    // rightRounds เรียงในสุดไปนอกสุด (ดูคอมเมนต์ computeBracketLayout) — col นับจากนอกสุดของฝั่งขวา
+    const colIdxFromOutermost = rightColCount - 1 - colIdxFromCenter;
+    const x = totalWidth - colIdxFromOutermost * COLUMN_SPACING;
+    for (const slot of r.slots) {
+      positions[`${r.round}-${slot.slot}-home`] = { x, y: rightShifted.nodeY[`${r.round}-${slot.slot}-home`] };
+      positions[`${r.round}-${slot.slot}-away`] = { x, y: rightShifted.nodeY[`${r.round}-${slot.slot}-away`] };
+    }
+  });
+
+  if (finalSlot) {
+    const homeX = leftWidth + FINAL_GAP;
+    const awayX = totalWidth - rightWidth - FINAL_GAP;
+    positions[`${finalSlot.round}-0-home`] = { x: homeX, y: centerY };
+    positions[`${finalSlot.round}-0-away`] = { x: awayX, y: centerY };
+  }
+
+  const trophyPos = { x: totalWidth / 2, y: centerY };
+
+  return { positions, totalWidth, totalHeight, centerY, leftWidth, rightWidth, trophyPos, totalRounds };
+}

@@ -1552,11 +1552,36 @@ button.btn-ghost:hover:not(:disabled) {
   margin-top: 12px;
 }
 
-.cup-bracket-mobile-toggle {
-  display: none;
-  gap: 6px;
+/* ===== กรอบซูม/แพน ===== */
+.cup-zoom-wrapper {
+  width: 100%;
+  height: 480px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  overflow: hidden;
+  /* อนุญาตเลื่อนหน้าแนวตั้งด้วยนิ้วเดียวตามปกติ — ไลบรารีจะจัดการ pinch (สองนิ้ว) กับลากแนวนอนเอง */
+  touch-action: pan-y;
+}
+
+@media (min-width: 720px) {
+  .cup-zoom-wrapper {
+    height: 600px;
+  }
+}
+
+.cup-zoom-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 10px;
-  justify-content: center;
+}
+
+.cup-bracket-mobile-toggle {
+  display: flex;
+  gap: 6px;
 }
 
 .cup-bracket-mobile-toggle button {
@@ -1569,28 +1594,47 @@ button.btn-ghost:hover:not(:disabled) {
   font-weight: 600;
 }
 
-.cup-bracket-mobile-toggle button.tab-active {
-  color: var(--accent-contrast);
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.cup-bracket-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 8px 4px 20px;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
-  mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
-}
-
-.cup-bracket-row {
-  position: relative;
+.cup-zoom-buttons {
   display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.cup-zoom-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  min-width: max-content;
-  margin: 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.cup-zoom-btn:hover {
+  border-color: var(--border-strong);
+}
+
+/* ผ้าใบจริง — ขนาดเท่าที่ผังต้องใช้จริง ไม่บีบ ไม่ clip ใครหลุดขอบ */
+.cup-canvas {
+  position: relative;
+}
+
+.cup-half-marker {
+  position: absolute;
+  pointer-events: none;
+}
+
+.cup-round-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 /* SVG เส้นทางแอนิเมชันลอยทับเลย์เอาต์ทั้งหมด — pointer-events none กันบังคลิกการ์ดแมตช์ */
@@ -1655,66 +1699,23 @@ button.btn-ghost:hover:not(:disabled) {
   }
 }
 
-.cup-side {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  flex-shrink: 0;
-}
-
-.cup-round-col {
-  display: flex;
-  flex-direction: column;
-  min-width: 132px;
-  flex-shrink: 0;
-}
-
-.cup-round-col h3 {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-align: center;
-  margin: 0 0 8px;
-  letter-spacing: 0.02em;
-}
-
-.cup-round-slots {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-}
-
-.cup-slot {
-  display: flex;
-  align-items: center;
-}
-
-/* ===== คู่แมตช์ + โหนดผู้เล่น (วงกลมลอย ไม่มีกล่องครอบ ตามดีไซน์ใหม่) ===== */
-.cup-match-pair {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 28px;
-  width: 100%;
-}
-
+/* ===== โหนดผู้เล่น (วงกลมลอย ไม่มีกล่องครอบ) — วางด้วยพิกัดที่คำนวณไว้แล้วเป๊ะ ๆ (bracketGeometry.js) ===== */
 .cup-node-wrap {
-  position: relative;
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  width: 100%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
-/* พื้นที่กดเข้าแมตช์ — โปร่งใสล้วน ไม่มีขอบ/พื้นให้เห็น */
+/* พื้นที่กดเข้าแมตช์ — โปร่งใสล้วน ไม่มีขอบ/พื้นให้เห็น ครอบเฉพาะวงรูป (ไม่ทับชื่อด้านล่าง) */
 .cup-node-hitarea {
   position: absolute;
-  top: -6px;
+  top: 0;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -1801,22 +1802,26 @@ button.btn-ghost:hover:not(:disabled) {
   opacity: 0.45;
 }
 
-.cup-node-placeholder ~ .cup-node-name {
+.cup-node-name-placeholder {
   color: var(--text-muted);
   font-style: italic;
 }
 
+/* ผู้เล่นที่ล็อกอินอยู่ — ขอบเด่นเพิ่ม ให้กวาดตาเจอเองง่าย ๆ แม้ยังไม่กดปุ่ม "โฟกัสที่ฉัน" */
+.cup-node-me .cup-node-avatar {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent-2);
+}
+
 /* ===== ถ้วยกลางจอ + แชมป์ ===== */
 .cup-center {
-  position: relative;
+  position: absolute;
+  transform: translate(-50%, -50%);
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0 8px;
-  flex-shrink: 0;
 }
 
 .cup-center-champion {
@@ -1892,16 +1897,6 @@ button.btn-ghost:hover:not(:disabled) {
   text-shadow: 0 0 8px var(--champion-glow);
 }
 
-.cup-final-node-col {
-  min-width: 70px;
-}
-
-.cup-final-node-slot {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .cup-trophy {
   filter: drop-shadow(0 0 10px var(--trophy-glow));
   transition: filter 500ms ease;
@@ -1927,22 +1922,6 @@ button.btn-ghost:hover:not(:disabled) {
   stop-color: var(--trophy-shadow);
 }
 
-/* ===== มือถือ: ปุ่มสลับดูทีละสาย (ซ่อนสายที่ไม่ได้เลือก เหลือศูนย์กลาง+อีกสายเสมอ) ===== */
-@media (max-width: 720px) {
-  .cup-bracket-mobile-toggle {
-    display: flex;
-  }
-
-  .cup-bracket-mobile-left .cup-side-right,
-  .cup-bracket-mobile-left .cup-final-node-col-right {
-    display: none;
-  }
-
-  .cup-bracket-mobile-right .cup-side-left,
-  .cup-bracket-mobile-right .cup-final-node-col-left {
-    display: none;
-  }
-}
 
 /* ===== Admin dashboard ===== */
 .dashboard-card {
