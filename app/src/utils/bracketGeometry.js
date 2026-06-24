@@ -7,7 +7,7 @@ export const COLUMN_SPACING = 130; // ระยะห่างแนวนอน
 export const NODE_RADIUS = 20;
 export const EDGE_PADDING = 28; // กันโหนดคอลัมน์ซ้ายสุด/ขวาสุดโดนตัดครึ่งวง — ศูนย์กลางโหนดต้องไม่ชนขอบผ้าใบเป๊ะ
 // แยกสองค่านี้ออกจากกัน — เดิมใช้ค่าเดียว (FINAL_GAP) ทั้งคู่ ทำให้ผู้เล่นนัดชิงสองคนห่างกันแค่ NODE_RADIUS*2 (~40px) ติดกันเกินไป
-const SEMI_TO_FINAL_GAP = COLUMN_SPACING / 2; // เท่ากันเป็นสัดส่วนเดียวกับคอลัมน์อื่น ๆ (ครึ่งของ COLUMN_SPACING) ไม่ให้ดูยาว/สั้นผิดที่
+const SEMI_TO_FINAL_GAP = COLUMN_SPACING; // เท่ากับ COLUMN_SPACING เป๊ะ ทุกช่วงคอลัมน์ระยะเท่ากันหมดทั้งสาย (ผู้ใช้ยืนยันแบบนี้)
 const FINALIST_GAP = 150; // ระยะระหว่างผู้เล่นนัดชิงสองคน (ให้ถ้วย+มงกุฎมีที่อยู่ตรงกลางพอดี ไม่ดูอัดกัน)
 
 // rounds ต้องเรียงจากรอบนอกสุด (มากทีมสุด) ไปรอบในสุดก่อนรอบชิง — คืน nodeY คีย์ "${round}-${slot}-${home|away}"
@@ -69,8 +69,9 @@ export function computeBracketGeometry(layout) {
 
   const leftColCount = leftRounds.length;
   const rightColCount = rightRounds.length;
-  const leftWidth = leftColCount * COLUMN_SPACING;
-  const rightWidth = rightColCount * COLUMN_SPACING;
+  // ระยะจาก "คอลัมน์แรก" ถึง "คอลัมน์สุดท้าย" ของแต่ละฝั่ง (ไม่ใช่ colCount*SPACING เพราะคอลัมน์ index เริ่มที่ 0 — คูณตรง ๆ จะเกินจริงไปหนึ่ง SPACING)
+  const leftWidth = (leftColCount - 1) * COLUMN_SPACING;
+  const rightWidth = (rightColCount - 1) * COLUMN_SPACING;
   const centerWidth = SEMI_TO_FINAL_GAP * 2 + FINALIST_GAP;
   // เผื่อ EDGE_PADDING ทั้งสองข้าง กันโหนดคอลัมน์นอกสุดโดนตัดครึ่งวง (ศูนย์กลางโหนดอยู่ที่ขอบเป๊ะไม่ได้ ต้องมีที่ให้อีกครึ่งวงด้วย)
   const innerWidth = leftWidth + centerWidth + rightWidth;
