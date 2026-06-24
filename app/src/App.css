@@ -1777,6 +1777,39 @@ button.btn-ghost:hover:not(:disabled) {
   box-shadow: 0 0 10px var(--champion-glow);
 }
 
+.cup-node-champion .cup-node-name {
+  color: var(--champion-color);
+  font-weight: 800;
+}
+
+/* มงกุฎอีโมจิลอยเหนือรูปแชมป์ — ลอยขึ้นลงสั้น ๆ วนตลอด ไม่ใช่ของตกแต่งนิ่ง ๆ */
+.cup-node-crown {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 18px;
+  line-height: 1;
+  z-index: 2;
+  animation: cup-crown-float 1800ms ease-in-out infinite;
+}
+
+@keyframes cup-crown-float {
+  0%,
+  100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cup-node-crown {
+    animation: none;
+  }
+}
+
 .cup-node-eliminated .cup-node-avatar {
   border-color: var(--border);
   opacity: 0.55;
@@ -1813,21 +1846,6 @@ button.btn-ghost:hover:not(:disabled) {
   gap: 6px;
 }
 
-.cup-center-champion {
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cup-champion-badge {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-top: 18px;
-}
-
 .cup-celebrate {
   animation: cup-celebrate-pop 900ms ease-out;
 }
@@ -1849,41 +1867,6 @@ button.btn-ghost:hover:not(:disabled) {
   .cup-celebrate {
     animation: none;
   }
-}
-
-.cup-champion-badge .cup-node-avatar {
-  width: 56px;
-  height: 56px;
-  border: 2px solid var(--champion-color);
-  box-shadow: 0 0 18px var(--champion-glow);
-}
-
-.cup-champion-badge .cup-node-avatar-fallback {
-  font-size: 22px;
-}
-
-.cup-champion-crown {
-  position: absolute;
-  top: -4px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--champion-color);
-  filter: drop-shadow(0 0 6px var(--champion-glow));
-}
-
-.cup-champion-placeholder {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  border: 1px dashed var(--border);
-  opacity: 0.4;
-}
-
-.cup-champion-name {
-  font-weight: 800;
-  color: var(--champion-color);
-  font-size: 13px;
-  text-shadow: 0 0 8px var(--champion-glow);
 }
 
 .cup-trophy {

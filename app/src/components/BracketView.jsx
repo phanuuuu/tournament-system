@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown, LocateFixed } from "lucide-react";
+import { LocateFixed } from "lucide-react";
 import { computeBracketLayout, isSettled, nodeState, scoreLabel, winnerUidOf } from "../utils/bracketLayout";
 import { computeBracketGeometry, NODE_RADIUS } from "../utils/bracketGeometry";
 import { roundLabel } from "../utils/roundLabel";
@@ -40,6 +40,11 @@ function PlayerNode({ pos, uid, profile, label, matchId, state, isMe, isMyCurren
           placeholder ? "cup-node-placeholder" : ""
         }`}
       >
+        {state === "champion" && (
+          <span className="cup-node-crown" aria-hidden="true">
+            👑
+          </span>
+        )}
         {placeholder ? (
           <span className="cup-node-avatar cup-node-avatar-fallback" aria-hidden="true">
             ?
@@ -67,42 +72,53 @@ function edgeOf(pos, goesRight) {
 
 // แมตช์หนึ่งคู่ -> ช่วงเส้นที่เกี่ยวข้อง (ผู้แพ้จบที่จุดบรรจบ, ผู้ชนะเลี้ยวออกไปรอบถัดไปถ้ามี)
 // ทิศที่จะออกจากขอบรูปคำนวณจากตำแหน่งจริงเทียบกับจุดบรรจบ (ไม่ต้องรู้ฝั่งซ้าย/ขวาล่วงหน้า)
+// นัดชิง (isFinal) ไม่ต้องมีเส้นเลย — ผู้เล่นทั้งสองจบแค่ที่รูปของตัวเอง ไม่ลากเข้าไปหาถ้วยกลางจอ (สถานะแชมป์ไปเด่นที่ตัวโหนดเองแทน)
+// ยังไม่ตัดสิน (match เป็น null หรือยังไม่จบ) ก็วาดได้ — ตำแหน่งมาจากโครงผังล้วน ๆ ไม่ต้องรู้ผล วาดเป็นเส้นทึบ "โครงร่าง" ล่วงหน้าไปจนถึงนัดชิงเสมอ
+// พอแมตช์นั้นตัดสินผลจริง ค่อยเปลี่ยนเป็นเรืองแสงตามผู้ชนะ (คีย์ของสองสถานะนี้ตั้งใจให้ต่างกัน ทำให้ React คนละ element กัน ไม่ต้องคอย morph เส้นเดิม)
 function buildMatchSegments(round, slot, match, championUid, geometry, isFinal) {
-  if (!match || !isSettled(match.status)) return [];
-  const homeUid = match.players.home;
+  if (isFinal) return [];
   const homePos = geometry.positions[`${round}-${slot}-home`];
   const awayPos = geometry.positions[`${round}-${slot}-away`];
   if (!homePos || !awayPos) return [];
 
-  const winnerUid = winnerUidOf(match);
-  if (winnerUid == null) return [];
+  const nextPos = geometry.positions[`${round + 1}-${Math.floor(slot / 2)}-${slot % 2 === 0 ? "home" : "away"}`];
+  const targetX = nextPos ? nextPos.x : homePos.x;
+  const junction = { x: (homePos.x + targetX) / 2, y: (homePos.y + awayPos.y) / 2 };
+
+  const settled = match && isSettled(match.status);
+  const winnerUid = settled ? winnerUidOf(match) : null;
+
+  if (!settled || winnerUid == null) {
+    const homeGoesRight = junction.x > homePos.x;
+    const awayGoesRight = junction.x > awayPos.x;
+    const segments = [
+      { key: `${round}-${slot}-skel-home`, d: elbow(edgeOf(homePos, homeGoesRight), junction), colorState: "dim", round, phase: "A" },
+      { key: `${round}-${slot}-skel-away`, d: elbow(edgeOf(awayPos, awayGoesRight), junction), colorState: "dim", round, phase: "A" },
+    ];
+    if (nextPos) {
+      segments.push({ key: `${round}-${slot}-skel-next`, d: elbow(junction, nextPos), colorState: "dim", round, phase: "B" });
+    }
+    return segments;
+  }
+
+  const homeUid = match.players.home;
   const winnerPos = winnerUid === homeUid ? homePos : awayPos;
   const loserPos = winnerUid === homeUid ? awayPos : homePos;
   const isChampionPath = winnerUid === championUid;
-
-  let junction;
-  let nextPos = null;
-  if (isFinal) {
-    junction = { x: (homePos.x + awayPos.x) / 2, y: (homePos.y + awayPos.y) / 2 };
-  } else {
-    nextPos = geometry.positions[`${round + 1}-${Math.floor(slot / 2)}-${slot % 2 === 0 ? "home" : "away"}`];
-    const targetX = nextPos ? nextPos.x : homePos.x;
-    junction = { x: (homePos.x + targetX) / 2, y: (homePos.y + awayPos.y) / 2 };
-  }
 
   const winnerGoesRight = junction.x > winnerPos.x;
   const loserGoesRight = junction.x > loserPos.x;
 
   const segments = [
     {
-      key: `${match.id}-loser`,
+      key: `${round}-${slot}-loser`,
       d: elbow(edgeOf(loserPos, loserGoesRight), junction),
       colorState: "dim",
       round,
       phase: "A",
     },
     {
-      key: `${match.id}-winner-a`,
+      key: `${round}-${slot}-winner-a`,
       d: elbow(edgeOf(winnerPos, winnerGoesRight), junction),
       colorState: isChampionPath ? "champion" : "alive",
       round,
@@ -110,9 +126,9 @@ function buildMatchSegments(round, slot, match, championUid, geometry, isFinal) 
     },
   ];
 
-  if (!isFinal && nextPos) {
+  if (nextPos) {
     segments.push({
-      key: `${match.id}-winner-b`,
+      key: `${round}-${slot}-winner-b`,
       d: elbow(junction, nextPos),
       colorState: isChampionPath ? "champion" : "alive",
       round,
@@ -129,7 +145,6 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
   const { roundsSkeleton, finalSlot, championUid, totalRounds } = layout;
   const geometry = useMemo(() => computeBracketGeometry(layout), [layout]);
 
-  const champion = championUid ? profiles[championUid] : null;
   const isFinished = leagueStatus === "finished";
 
   const [skipAnimation] = useState(() => prefersReducedMotion());
@@ -369,20 +384,9 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
           )}
 
           <div className="cup-center" style={{ left: geometry.trophyPos.x, top: geometry.trophyPos.y + HEADER_HEIGHT }}>
-            <div className="cup-center-champion">
-              {champion ? (
-                <div className={`cup-champion-badge ${celebrate ? "cup-celebrate" : ""}`}>
-                  <Crown size={28} className="cup-champion-crown" aria-hidden="true" />
-                  <TeamAvatar photoURL={champion.photoURL} name={champion.displayName} />
-                </div>
-              ) : (
-                <div className="cup-champion-placeholder" aria-hidden="true" />
-              )}
-            </div>
             <div className={celebrate ? "cup-celebrate" : ""}>
               <CupTrophy lit={isFinished} size={84} />
             </div>
-            {champion && <span className="cup-champion-name">{champion.displayName}</span>}
           </div>
         </div>
       </div>

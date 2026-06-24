@@ -80,9 +80,9 @@
   --glow-2-md: 0 0 16px rgba(255, 46, 151, 0.42), 0 0 4px rgba(255, 46, 151, 0.55);
   --glow-danger: 0 0 14px rgba(255, 59, 92, 0.45);
 
-  /* ทองสำหรับเส้นทาง/ผู้ชนะถ้วย — แยกจาก accent/accent-2 ตั้งใจ กันสับสนความหมายอื่น เช็คคอนทราสต์กับพื้นการ์ดผ่าน AA แล้ว */
-  --champion-color: #ffd60a;
-  --champion-glow: rgba(255, 214, 10, 0.55);
+  /* ส้มแสดงสำหรับเส้นทาง/ผู้ชนะถ้วย — แยกจาก accent/accent-2 ตั้งใจ กันสับสนความหมายอื่น ใช้ค่าเดียวกับ status-orange (เช็คคอนทราสต์ผ่าน AA แล้ว) */
+  --champion-color: #ff7a1a;
+  --champion-glow: rgba(255, 122, 26, 0.55);
 
   --trophy-light: #f3f6fa;
   --trophy-mid: #aab6c9;
@@ -134,9 +134,9 @@
   --glow-2-md: 0 2px 10px rgba(200, 19, 104, 0.22);
   --glow-danger: 0 2px 10px rgba(200, 30, 63, 0.3);
 
-  /* ทองเข้มกว่าดาร์กโหมดมาก เพราะพื้นขาวต้องการสีเข้มถึงจะผ่าน AA (เช็คแล้ว ~5.9:1) */
-  --champion-color: #8a5a00;
-  --champion-glow: rgba(138, 90, 0, 0.35);
+  /* ส้มเข้มกว่าดาร์กโหมดมาก เพราะพื้นขาวต้องการสีเข้มถึงจะผ่าน AA — ใช้ค่าเดียวกับ status-orange-light (เช็คคอนทราสต์ผ่าน AA แล้ว) */
+  --champion-color: #b35100;
+  --champion-glow: rgba(179, 81, 0, 0.35);
 
   --trophy-light: #ffffff;
   --trophy-mid: #c3cad6;
