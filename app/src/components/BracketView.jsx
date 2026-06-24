@@ -11,7 +11,7 @@ import CupTrophy from "./CupTrophy";
 const PHASE_A_MS = 3000; // ทุกคนในรอบวิ่งจากรูป -> จุดบรรจบ พร้อมกัน
 const PHASE_B_MS = 500; // ผู้ชนะเลี้ยวออกจากจุดบรรจบ -> รูปรอบถัดไป
 const CELEBRATE_MS = 900;
-const HEADER_HEIGHT = 28;
+const HEADER_HEIGHT = 44; // เผื่อที่ให้ label หัวรอบไม่ทับขอบบนของรูปโปรไฟล์แถวแรก
 const BOTTOM_PADDING = 36; // เผื่อพื้นที่ด้านล่างผัง ไม่ให้รอบสุดท้าย/ชื่อผู้เล่นอยู่ติดขอบจนอึดอัด
 
 function TeamAvatar({ photoURL, name }) {
@@ -199,13 +199,19 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
     return () => clearTimeout(t);
   }, [championUid, skipAnimation, totalRounds]);
 
-  // หัวข้อรอบ (รอบ X ทีม) วางไว้บนสุดของแต่ละคอลัมน์ — เอาตำแหน่ง x จากโหนด home ของรอบนั้น (ทุก slot ในรอบเดียวกัน x เท่ากันอยู่แล้ว)
+  // หัวข้อรอบ (รอบ X ทีม) วางไว้บนสุดของแต่ละคอลัมน์ — แต่ละรอบมีคอลัมน์ทั้งฝั่งซ้ายและขวา (x ต่างกัน) ต้องใส่ label สองจุดต่อรอบ
+  // slots[0] = slot แรกของรอบ (อยู่ฝั่งซ้ายเสมอตามกติกาแบ่งครึ่งของ computeBracketLayout), slots สุดท้าย = ฝั่งขวาเสมอ
   const columnHeaders = roundsSkeleton
     .filter((r) => r.round !== totalRounds)
-    .map((r) => ({
-      round: r.round,
-      x: geometry.positions[`${r.round}-${r.slots[0].slot}-home`].x,
-    }));
+    .flatMap((r) => {
+      const leftX = geometry.positions[`${r.round}-${r.slots[0].slot}-home`].x;
+      const rightX = geometry.positions[`${r.round}-${r.slots[r.slots.length - 1].slot}-home`].x;
+      if (leftX === rightX) return [{ key: `${r.round}`, round: r.round, x: leftX }];
+      return [
+        { key: `${r.round}-l`, round: r.round, x: leftX },
+        { key: `${r.round}-r`, round: r.round, x: rightX },
+      ];
+    });
 
   // เลื่อนสกอลล์แนวนอนไปยังฝั่งที่เลือก — ผ้าใบเต็มขนาดจริง ไม่ได้บีบ/ซ่อนใคร แค่เลื่อนพามาดูฝั่งที่อยากดู
   function scrollToSide(side) {
@@ -244,8 +250,8 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
           className="cup-canvas"
           style={{ width: geometry.totalWidth, height: geometry.totalHeight + HEADER_HEIGHT + BOTTOM_PADDING }}
         >
-          {columnHeaders.map(({ round, x }) => (
-            <span key={round} className="cup-round-label" style={{ left: x }}>
+          {columnHeaders.map(({ key, round, x }) => (
+            <span key={key} className="cup-round-label" style={{ left: x }}>
               {roundLabel(bracketSize, round)}
             </span>
           ))}

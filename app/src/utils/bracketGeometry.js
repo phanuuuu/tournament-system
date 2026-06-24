@@ -5,7 +5,9 @@
 export const NODE_SPACING = 96; // ระยะห่างแนวตั้งระหว่างโหนดติดกันในรอบนอกสุด (รอบ 1)
 export const COLUMN_SPACING = 168; // ระยะห่างแนวนอนระหว่างคอลัมน์รอบ
 export const NODE_RADIUS = 20;
-const FINAL_GAP = 110; // ระยะห่างจากคอลัมน์รอบรองสุดท้ายถึงโหนดรอบชิง (ฝั่งละข้าง คั่นด้วยถ้วยตรงกลาง)
+// แยกสองค่านี้ออกจากกัน — เดิมใช้ค่าเดียว (FINAL_GAP) ทั้งคู่ ทำให้ผู้เล่นนัดชิงสองคนห่างกันแค่ NODE_RADIUS*2 (~40px) ติดกันเกินไป
+const SEMI_TO_FINAL_GAP = 84; // ระยะจากคอลัมน์รอบรองสุดท้ายถึงโหนดนัดชิง (แคบกว่า COLUMN_SPACING ปกติ ไม่ให้เส้นยาวเกินจำเป็น)
+const FINALIST_GAP = 150; // ระยะระหว่างผู้เล่นนัดชิงสองคน (ให้ถ้วย+มงกุฎมีที่อยู่ตรงกลางพอดี ไม่ดูอัดกัน)
 
 // rounds ต้องเรียงจากรอบนอกสุด (มากทีมสุด) ไปรอบในสุดก่อนรอบชิง — คืน nodeY คีย์ "${round}-${slot}-${home|away}"
 function computeSideYPositions(rounds) {
@@ -68,7 +70,7 @@ export function computeBracketGeometry(layout) {
   const rightColCount = rightRounds.length;
   const leftWidth = leftColCount * COLUMN_SPACING;
   const rightWidth = rightColCount * COLUMN_SPACING;
-  const centerWidth = FINAL_GAP * 2 + NODE_RADIUS * 2;
+  const centerWidth = SEMI_TO_FINAL_GAP * 2 + FINALIST_GAP;
   const totalWidth = leftWidth + centerWidth + rightWidth;
 
   const positions = {}; // key: "${round}-${slot}-${home|away}" -> {x, y} (รวม final ด้วยคีย์ round นั้น slot 0)
@@ -92,8 +94,8 @@ export function computeBracketGeometry(layout) {
   });
 
   if (finalSlot) {
-    const homeX = leftWidth + FINAL_GAP;
-    const awayX = totalWidth - rightWidth - FINAL_GAP;
+    const homeX = leftWidth + SEMI_TO_FINAL_GAP;
+    const awayX = homeX + FINALIST_GAP;
     positions[`${finalSlot.round}-0-home`] = { x: homeX, y: centerY };
     positions[`${finalSlot.round}-0-away`] = { x: awayX, y: centerY };
   }
