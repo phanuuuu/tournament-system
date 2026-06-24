@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Crown } from "lucide-react";
+import { Crown, LocateFixed } from "lucide-react";
 import { computeBracketLayout, isSettled, nodeState, scoreLabel, winnerUidOf } from "../utils/bracketLayout";
 import { computeBracketGeometry, NODE_RADIUS } from "../utils/bracketGeometry";
 import { roundLabel } from "../utils/roundLabel";
@@ -24,10 +24,14 @@ function TeamAvatar({ photoURL, name }) {
   );
 }
 
-function PlayerNode({ pos, uid, profile, label, matchId, state, isMe }) {
+function PlayerNode({ pos, uid, profile, label, matchId, state, isMe, isMyCurrent }) {
   const placeholder = !uid;
   return (
-    <div className="cup-node-wrap" style={{ left: pos.x, top: pos.y + HEADER_HEIGHT }}>
+    <div
+      className="cup-node-wrap"
+      data-my-current={isMyCurrent || undefined}
+      style={{ left: pos.x, top: pos.y + HEADER_HEIGHT }}
+    >
       {!placeholder && (
         <Link to={`/matches/${matchId}`} className="cup-node-hitarea" aria-label={profile?.displayName ?? "ผู้เล่น"} />
       )}
@@ -137,6 +141,26 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
   const drawnKeysRef = useRef(new Set());
   const scrollRef = useRef(null);
 
+  // จุดที่ฉันอยู่ปัจจุบัน = แมตช์รอบลึกสุดที่มี uid ฉันอยู่ (ชนะมาเรื่อย ๆ แมตช์รอบถัดไปจะมี uid ฉันโผล่ขึ้นมาเองอยู่แล้ว ไม่ต้องไล่ผู้ชนะเอง)
+  const myCurrentMatch = useMemo(() => {
+    let best = null;
+    for (const m of matches) {
+      if (m.kind !== "regular" || m.round == null) continue;
+      if (m.players.home !== user.uid && m.players.away !== user.uid) continue;
+      if (!best || m.round > best.round) best = m;
+    }
+    return best;
+  }, [matches, user.uid]);
+  const myCurrentRole = myCurrentMatch ? (myCurrentMatch.players.home === user.uid ? "home" : "away") : null;
+
+  function scrollToMe() {
+    scrollRef.current?.querySelector('[data-my-current="true"]')?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  }
+
+  function isMyCurrentNode(round, slot, role) {
+    return !!myCurrentMatch && myCurrentMatch.round === round && myCurrentMatch.slot === slot && myCurrentRole === role;
+  }
+
   const segmentList = useMemo(() => {
     const list = [];
     for (const r of roundsSkeleton) {
@@ -232,17 +256,26 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
 
   return (
     <div className="cup-bracket">
-      {totalRounds > 1 && (
-        <div className="cup-bracket-mobile-toggle">
-          <button type="button" className={mobileSide === "left" ? "tab-active" : ""} onClick={() => scrollToSide("left")}>
-            สายซ้าย
-          </button>
-          <button type="button" className={mobileSide === "both" ? "tab-active" : ""} onClick={() => scrollToSide("both")}>
-            ทั้งหมด
-          </button>
-          <button type="button" className={mobileSide === "right" ? "tab-active" : ""} onClick={() => scrollToSide("right")}>
-            สายขวา
-          </button>
+      {(totalRounds > 1 || myCurrentMatch) && (
+        <div className="cup-bracket-toolbar">
+          {totalRounds > 1 && (
+            <div className="cup-bracket-mobile-toggle">
+              <button type="button" className={mobileSide === "left" ? "tab-active" : ""} onClick={() => scrollToSide("left")}>
+                สายซ้าย
+              </button>
+              <button type="button" className={mobileSide === "both" ? "tab-active" : ""} onClick={() => scrollToSide("both")}>
+                ทั้งหมด
+              </button>
+              <button type="button" className={mobileSide === "right" ? "tab-active" : ""} onClick={() => scrollToSide("right")}>
+                สายขวา
+              </button>
+            </div>
+          )}
+          {myCurrentMatch && (
+            <button type="button" className="cup-find-me-btn" onClick={scrollToMe}>
+              <LocateFixed size={14} /> หาตัวเอง
+            </button>
+          )}
         </div>
       )}
       <div className="cup-bracket-scroll" ref={scrollRef}>
@@ -293,6 +326,7 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
                     matchId={match?.id}
                     state={match ? nodeState(match.players.home, match, championUid) : null}
                     isMe={!!match && match.players.home === user.uid}
+                    isMyCurrent={isMyCurrentNode(r.round, slot.slot, "home")}
                   />
                   <PlayerNode
                     pos={awayPos}
@@ -302,6 +336,7 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
                     matchId={match?.id}
                     state={match ? nodeState(match.players.away, match, championUid) : null}
                     isMe={!!match && match.players.away === user.uid}
+                    isMyCurrent={isMyCurrentNode(r.round, slot.slot, "away")}
                   />
                 </div>
               );
@@ -318,6 +353,7 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
                 matchId={finalSlot.match?.id}
                 state={finalSlot.match ? nodeState(finalSlot.match.players.home, finalSlot.match, championUid) : null}
                 isMe={!!finalSlot.match && finalSlot.match.players.home === user.uid}
+                isMyCurrent={isMyCurrentNode(finalSlot.round, 0, "home")}
               />
               <PlayerNode
                 pos={geometry.positions[`${finalSlot.round}-0-away`]}
@@ -327,6 +363,7 @@ export default function BracketView({ matches, profiles, bracketSize, leagueStat
                 matchId={finalSlot.match?.id}
                 state={finalSlot.match ? nodeState(finalSlot.match.players.away, finalSlot.match, championUid) : null}
                 isMe={!!finalSlot.match && finalSlot.match.players.away === user.uid}
+                isMyCurrent={isMyCurrentNode(finalSlot.round, 0, "away")}
               />
             </>
           )}
