@@ -76,14 +76,15 @@ function Podium({ top, profiles, animReady }) {
         : [top[0]];
   return (
     <div className="standings-podium">
-      {slots.map((row, i) => {
+      {slots.map((row) => {
         const profile = profiles[row.uid];
         return (
           <div
             key={row.uid}
             className={`standings-podium-slot standings-podium-rank${row.rank} ${animReady ? "standings-anim-go" : "standings-anim-wait"}`}
             style={{
-              animationDelay: `${i * PODIUM_STAGGER_MS}ms`,
+              // โผล่ไล่จากอันดับ 3 -> 2 -> 1 (ไม่ใช่ตามตำแหน่งซ้าย-ขวาบนจอ) ให้ลุ้นไปถึงแชมป์ตัวสุดท้ายเหมือนประกาศผลงานจริง
+              animationDelay: `${(top.length - row.rank) * PODIUM_STAGGER_MS}ms`,
               animationDuration: `${PODIUM_RISE_MS}ms`,
             }}
           >
