@@ -45,14 +45,6 @@ export default function LeaguePublicDetailPage() {
         ผู้เล่น: {league.playerIds.length}/{league.size}
       </p>
 
-      {league.format !== "cup" && (
-        <ul className="player-chip-list">
-          {league.playerIds.map((uid) => (
-            <li key={uid}>{profiles[uid]?.displayName ?? "กำลังโหลด..."}</li>
-          ))}
-        </ul>
-      )}
-
       <LeagueResultsView
         league={league}
         matches={matches}
@@ -62,14 +54,12 @@ export default function LeaguePublicDetailPage() {
         onCreateTiebreaker={(a, b) => createTiebreakerMatch(leagueId, a, b)}
       />
 
-      {/* บอลถ้วย: ย้ายรายชื่อผู้เล่นลงล่างสุด เพราะผู้เล่นสนใจ "สาย" มากกว่ารายชื่อ */}
-      {league.format === "cup" && (
-        <ul className="player-chip-list">
-          {league.playerIds.map((uid) => (
-            <li key={uid}>{profiles[uid]?.displayName ?? "กำลังโหลด..."}</li>
-          ))}
-        </ul>
-      )}
+      {/* ย้ายรายชื่อผู้เล่นลงล่างสุดเสมอ ไม่ว่ารูปแบบลีคไหน — ผู้เล่นสนใจตาราง/สายผลแข่งมากกว่ารายชื่อ */}
+      <ul className="player-chip-list">
+        {league.playerIds.map((uid) => (
+          <li key={uid}>{profiles[uid]?.displayName ?? "กำลังโหลด..."}</li>
+        ))}
+      </ul>
     </div>
   );
 }

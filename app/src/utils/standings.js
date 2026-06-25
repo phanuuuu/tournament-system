@@ -36,6 +36,51 @@ function isRegularMatchSettled(m, byeBans) {
   return !!(byeBans[m.players.home]?.active || byeBans[m.players.away]?.active);
 }
 
+function toMillis(t) {
+  if (!t) return 0;
+  if (typeof t.toMillis === "function") return t.toMillis();
+  if (typeof t.seconds === "number") return t.seconds * 1000;
+  if (t instanceof Date) return t.getTime();
+  return 0;
+}
+
+// ผลแมตช์เดียวจากมุมมองผู้เล่นคนหนึ่ง ("W"/"D"/"L") ใช้ตรรกะเดียวกับ computeStandings เป๊ะ
+// (แพ้บาน = แพ้อัตโนมัติ, walkover ใช้ผู้ชนะที่บันทึกไว้, แมตช์ปกติเทียบสกอร์ที่อนุมัติแล้ว) แค่ไม่ได้สะสมเป็นสถิติ คืนผลแยกนัดต่อนัด
+function matchOutcomeForPlayer(m, uid, byeBans) {
+  const { home, away } = m.players;
+  if (uid !== home && uid !== away) return null;
+  const opponent = uid === home ? away : home;
+  if (byeBans[uid]?.active && byeBans[opponent]?.active) return null;
+  if (byeBans[uid]?.active) return "L";
+  if (byeBans[opponent]?.active) return "W";
+  if (m.status === "walkover") return m.walkover.winnerUid === uid ? "W" : "L";
+  if (m.status !== "approved") return null;
+  const myScore = uid === home ? m.approvedResult.scoreHome : m.approvedResult.scoreAway;
+  const oppScore = uid === home ? m.approvedResult.scoreAway : m.approvedResult.scoreHome;
+  if (myScore > oppScore) return "W";
+  if (myScore < oppScore) return "L";
+  return "D";
+}
+
+// ฟอร์ม N นัดหลังสุดต่อผู้เล่น (เรียงเก่า -> ใหม่) คำนวณจากผลแมตช์ที่มีอยู่แล้วล้วน ๆ ฝั่ง client ไม่มี field ใหม่ใน DB
+// เรียงตามเวลาที่ตัดสินผลจริง (decidedAt) ถ้าไม่มีค่อย fallback ไป createdAt (เช่น walkover ที่ไม่มี decidedAt ของตัวเอง)
+export function computeForm(playerIds, matches, byeBans = {}, limit = 5) {
+  const regular = matches.filter((m) => m.kind === "regular");
+  const form = {};
+  for (const uid of playerIds) {
+    const outcomes = [];
+    for (const m of regular) {
+      if (m.players.home !== uid && m.players.away !== uid) continue;
+      const outcome = matchOutcomeForPlayer(m, uid, byeBans);
+      if (outcome == null) continue;
+      outcomes.push({ outcome, at: toMillis(m.approvedResult?.decidedAt ?? m.createdAt) });
+    }
+    outcomes.sort((a, b) => a.at - b.at);
+    form[uid] = outcomes.slice(-limit).map((o) => o.outcome);
+  }
+  return form;
+}
+
 export function computeStandings(playerIds, matches, byeBans = {}) {
   const stats = {};
   for (const uid of playerIds) stats[uid] = emptyStats(uid);

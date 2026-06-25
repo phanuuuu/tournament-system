@@ -175,8 +175,6 @@ export default function AdminLeagueDetailPage() {
 
       {error && <p className="form-error">{error}</p>}
 
-      {league.format !== "cup" && playerListEl}
-
       <div className="admin-actions">
         {league.status === "open" && (
           <button type="button" className="btn-primary" disabled={busy || !canStartLeague(league)} onClick={handleStart}>
@@ -211,8 +209,8 @@ export default function AdminLeagueDetailPage() {
         onCreateTiebreaker={(a, b) => createTiebreakerMatch(leagueId, a, b)}
       />
 
-      {/* บอลถ้วย: ย้ายรายชื่อ (พร้อมปุ่มเตะออก/แพ้บาย) ลงล่างสุด เหมือนหน้าผู้เล่น */}
-      {league.format === "cup" && playerListEl}
+      {/* ย้ายรายชื่อ (พร้อมปุ่มเตะออก/แพ้บาย) ลงล่างสุดเสมอ ไม่ว่ารูปแบบลีคไหน — ผู้เล่นสนใจตาราง/สายผลแข่งมากกว่ารายชื่อ */}
+      {playerListEl}
     </div>
   );
 }

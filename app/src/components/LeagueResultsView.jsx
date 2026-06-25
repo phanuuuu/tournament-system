@@ -14,6 +14,8 @@ export default function LeagueResultsView({ league, matches, profiles, byeBans, 
       {league.format === "points" ? (
         <StandingsTable
           standings={computeStandings(league.playerIds, matches, byeBans)}
+          matches={matches}
+          byeBans={byeBans}
           profiles={profiles}
           isAdmin={isAdmin}
           onCreateTiebreaker={onCreateTiebreaker}

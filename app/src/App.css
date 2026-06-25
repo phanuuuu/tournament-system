@@ -1427,7 +1427,7 @@ button.btn-ghost:hover:not(:disabled) {
   color: var(--color-success);
 }
 
-/* ===== Standings table ===== */
+/* ===== Standings table (เก็บแต้ม) — สไตล์ตารางพรีเมียร์ลีก ===== */
 .standings-table {
   margin-top: 16px;
   background: var(--surface-solid);
@@ -1435,6 +1435,183 @@ button.btn-ghost:hover:not(:disabled) {
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--glow-sm);
+}
+
+/* ----- โพเดียม Top 3 ----- */
+.standings-podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 14px 0;
+}
+
+.standings-podium-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 0;
+  max-width: 130px;
+  padding-bottom: 10px;
+  animation: standings-podium-rise 500ms ease-out backwards;
+}
+
+.standings-podium-rank1 {
+  order: 2;
+  animation-delay: 120ms;
+}
+
+.standings-podium-rank2 {
+  order: 1;
+  animation-delay: 0ms;
+}
+
+.standings-podium-rank3 {
+  order: 3;
+  animation-delay: 0ms;
+}
+
+@keyframes standings-podium-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.standings-podium-crown {
+  font-size: 22px;
+  margin-bottom: 2px;
+  animation: standings-crown-float 1800ms ease-in-out infinite;
+}
+
+@keyframes standings-crown-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.standings-podium-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border);
+  background: var(--surface-2);
+}
+
+.standings-podium-rank1 .standings-podium-avatar {
+  width: 72px;
+  height: 72px;
+  border-color: #ffd60a;
+  box-shadow: 0 0 16px rgba(255, 214, 10, 0.55);
+}
+
+.standings-podium-rank2 .standings-podium-avatar {
+  border-color: #c7d2e0;
+  box-shadow: 0 0 10px rgba(199, 210, 224, 0.4);
+}
+
+.standings-podium-rank3 .standings-podium-avatar {
+  border-color: #d98a4f;
+  box-shadow: 0 0 10px rgba(217, 138, 79, 0.4);
+}
+
+.standings-podium-avatar.standings-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--text-muted);
+}
+
+.standings-podium-name {
+  margin-top: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.standings-podium-pts {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--status-green);
+  margin-top: 2px;
+}
+
+.standings-podium-base {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 20px;
+  color: #1a1408;
+}
+
+.standings-podium-rank1 .standings-podium-base {
+  height: 56px;
+  background: linear-gradient(180deg, #ffe066, #ffc107);
+}
+
+.standings-podium-rank2 .standings-podium-base {
+  height: 40px;
+  background: linear-gradient(180deg, #e3e9f0, #b9c4d2);
+}
+
+.standings-podium-rank3 .standings-podium-base {
+  height: 28px;
+  background: linear-gradient(180deg, #e3a06a, #c97c40);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .standings-podium-slot {
+    animation: none;
+  }
+  .standings-podium-crown {
+    animation: none;
+  }
+}
+
+/* ----- แท็บ ตาราง/ฟอร์ม ----- */
+.standings-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 14px 14px 0;
+}
+
+.standings-tabs button {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.standings-tabs button.tab-active {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .standings-info {
@@ -1454,31 +1631,90 @@ button.btn-ghost:hover:not(:disabled) {
   color: var(--text-muted);
 }
 
+/* ----- ตารางหลัก ----- */
+.standings-scroll {
+  overflow-x: auto;
+}
+
 .standings-table table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .standings-table th {
   background: var(--surface-2);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .standings-table th,
 .standings-table td {
-  padding: 10px 8px;
+  padding: 10px 6px;
   text-align: center;
   border-bottom: 1px solid var(--border);
 }
 
-.standings-table td:nth-child(2) {
-  text-align: left;
+.standings-col-team {
+  text-align: left !important;
+  min-width: 130px;
+}
+
+.standings-team-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.standings-team-name {
   font-weight: 600;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
+.standings-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.standings-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.standings-col-points {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+/* แถบสีซ้ายบอกโซน — บนสุด (แชมป์/นำตาราง) นีออน, ล่างสุด (บ๊วย) ส้ม/แดงจาง */
+.standings-table tbody tr {
+  position: relative;
+}
+
+.standings-zone-top td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--accent-2);
+}
+
+.standings-zone-bottom td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--status-orange);
 }
 
 .standings-table tr.my-row {
@@ -1486,8 +1722,35 @@ button.btn-ghost:hover:not(:disabled) {
   box-shadow: inset 3px 0 0 0 var(--accent), 0 0 12px rgba(0, 229, 255, 0.12);
 }
 
+.standings-table tr.my-row.standings-zone-top td:first-child,
+.standings-table tr.my-row.standings-zone-bottom td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--accent), 0 0 12px rgba(0, 229, 255, 0.12);
+}
+
 .standings-table tr:last-child td {
   border-bottom: none;
+}
+
+/* stagger fade-up ตอนตารางปรากฏ */
+.standings-row-enter {
+  animation: standings-row-fade-up 400ms ease-out backwards;
+}
+
+@keyframes standings-row-fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .standings-row-enter {
+    animation: none;
+  }
 }
 
 .rank-cell {
@@ -1522,6 +1785,43 @@ button.btn-ghost:hover:not(:disabled) {
   }
 }
 
+/* ----- แท็บฟอร์ม: จุดวงกลม W/D/L ----- */
+.standings-form-dots {
+  display: inline-flex;
+  gap: 5px;
+  justify-content: center;
+}
+
+.standings-form-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.standings-form-w {
+  background: var(--status-green);
+}
+
+.standings-form-d {
+  background: var(--status-gray);
+}
+
+.standings-form-l {
+  background: var(--danger);
+}
+
+.standings-form-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .tie-explainer {
   margin: 0;
   font-size: 14px;
@@ -1537,6 +1837,56 @@ button.btn-ghost:hover:not(:disabled) {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+/* ----- บ๊วย (อันดับสุดท้าย) ----- */
+.standings-lastplace {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.standings-lastplace-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--status-orange);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.standings-lastplace-avatar.standings-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-muted);
+}
+
+.standings-lastplace-label {
+  font-size: 11px;
+  color: var(--status-orange);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+.standings-lastplace-name {
+  font-weight: 700;
+  color: var(--text);
+  margin: 2px 0 0;
+}
+
+.standings-lastplace-cheer {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
