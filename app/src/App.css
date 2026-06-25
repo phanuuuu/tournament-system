@@ -1145,10 +1145,17 @@ button.btn-ghost:hover:not(:disabled) {
   justify-content: center;
   width: 26px;
   height: 26px;
+  min-height: 0;
+  padding: 0;
   border-radius: 50%;
   border: none;
   background: transparent;
   color: var(--accent);
+  flex-shrink: 0;
+}
+
+.match-code-copy-btn svg {
+  flex-shrink: 0;
 }
 
 .match-code-copy-btn:hover {
@@ -1685,6 +1692,14 @@ button.btn-ghost:hover:not(:disabled) {
   font-weight: 800;
   font-family: var(--font-heading);
   padding: 8px 4px;
+  /* ซ่อนลูกศรขึ้น-ลงที่เบราว์เซอร์ใส่มาเองให้ input type=number — มันไปทับกับปุ่ม +/− ของเราเอง */
+  -moz-appearance: textfield;
+}
+
+.score-stepper-input::-webkit-outer-spin-button,
+.score-stepper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* เด้ง+เรืองวับตอนแตะ +/− หรือกดค้างรัว ๆ ให้รู้สึกกดติด */
