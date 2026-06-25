@@ -2,28 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { computeForm } from "../utils/standings";
-
-// สปลาชหน้าแอป (BootSplashGate) ครอบ children ไว้เฉย ๆ (ไม่ unmount) อย่างน้อย ~2.4 วิ — ถ้าปล่อยให้อนิเมชันนับเวลาจาก mount เลย
-// ตอนรีเฟรชหน้าจริง โพเดียมจะขึ้นจบไปแล้วทั้งที่ยังโดนสปลาชบังอยู่ ผู้ใช้จะไม่เห็นจังหวะขึ้นทีละอันเลย
-// hook นี้รอให้ .splash-screen หายไปจาก DOM ก่อน (หรือเริ่มทันทีถ้าไม่มีสปลาชอยู่แล้ว เช่นกดลิงก์ในแอปไปหน้านี้)
-function useAnimationsReady() {
-  const [ready, setReady] = useState(false);
-  useEffect(() => {
-    if (!document.querySelector(".splash-screen")) {
-      const raf = requestAnimationFrame(() => setReady(true));
-      return () => cancelAnimationFrame(raf);
-    }
-    const observer = new MutationObserver(() => {
-      if (!document.querySelector(".splash-screen")) {
-        setReady(true);
-        observer.disconnect();
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, []);
-  return ready;
-}
+import useAnimationsReady from "../hooks/useAnimationsReady";
 
 function Avatar({ photoURL, name, className = "standings-avatar" }) {
   return photoURL ? (
