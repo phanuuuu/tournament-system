@@ -1430,11 +1430,6 @@ button.btn-ghost:hover:not(:disabled) {
 /* ===== Standings table (เก็บแต้ม) — สไตล์ตารางพรีเมียร์ลีก ===== */
 .standings-table {
   margin-top: 16px;
-  background: var(--surface-solid);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--glow-sm);
 }
 
 /* ----- โพเดียม Top 3 ----- */
@@ -1454,22 +1449,30 @@ button.btn-ghost:hover:not(:disabled) {
   flex: 1 1 0;
   max-width: 130px;
   padding-bottom: 10px;
-  animation: standings-podium-rise 500ms ease-out backwards;
+}
+
+/* รอจนกว่าสปลาชหน้าแอปหายไปก่อนค่อยเริ่มเล่น (กันโพเดียมขึ้นจบไปแล้วทั้งที่ยังโดนสปลาชบังอยู่ตอนรีเฟรชหน้า) */
+.standings-podium-slot.standings-anim-wait {
+  opacity: 0;
+}
+
+/* ระยะ/จังหวะจริงกำหนดจาก inline style (animationDelay/animationDuration) ใน StandingsTable.jsx ให้ขึ้นทีละอันช้า ๆ ตามลำดับซ้าย-กลาง-ขวา */
+.standings-podium-slot.standings-anim-go {
+  animation-name: standings-podium-rise;
+  animation-timing-function: ease-out;
+  animation-fill-mode: backwards;
 }
 
 .standings-podium-rank1 {
   order: 2;
-  animation-delay: 120ms;
 }
 
 .standings-podium-rank2 {
   order: 1;
-  animation-delay: 0ms;
 }
 
 .standings-podium-rank3 {
   order: 3;
-  animation-delay: 0ms;
 }
 
 @keyframes standings-podium-rise {
@@ -1583,7 +1586,8 @@ button.btn-ghost:hover:not(:disabled) {
 
 @media (prefers-reduced-motion: reduce) {
   .standings-podium-slot {
-    animation: none;
+    animation: none !important;
+    opacity: 1 !important;
   }
   .standings-podium-crown {
     animation: none;
@@ -1634,12 +1638,15 @@ button.btn-ghost:hover:not(:disabled) {
 /* ----- ตารางหลัก ----- */
 .standings-scroll {
   overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .standings-table table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  background: var(--surface-solid);
 }
 
 .standings-table th {
@@ -1732,8 +1739,16 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 /* stagger fade-up ตอนตารางปรากฏ */
-.standings-row-enter {
-  animation: standings-row-fade-up 400ms ease-out backwards;
+/* รอจนกว่าสปลาชหน้าแอปหายไปก่อนค่อยเริ่มเล่น เหตุผลเดียวกับโพเดียม */
+.standings-row-enter.standings-anim-wait {
+  opacity: 0;
+}
+
+.standings-row-enter.standings-anim-go {
+  /* ระยะ/จังหวะจริงกำหนดจาก inline style (animationDelay/animationDuration) ใน StandingsTable.jsx ให้ทยอยโผล่ทีละแถวหลังโพเดียมจบ */
+  animation-name: standings-row-fade-up;
+  animation-timing-function: ease-out;
+  animation-fill-mode: backwards;
 }
 
 @keyframes standings-row-fade-up {
@@ -1749,7 +1764,8 @@ button.btn-ghost:hover:not(:disabled) {
 
 @media (prefers-reduced-motion: reduce) {
   .standings-row-enter {
-    animation: none;
+    animation: none !important;
+    opacity: 1 !important;
   }
 }
 
@@ -1823,12 +1839,12 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 .tie-explainer {
-  margin: 0;
+  margin-top: 10px;
   font-size: 14px;
   color: var(--status-orange);
   background: var(--warning-tint);
   padding: 12px 14px;
-  border-top: 1px solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .tie-explainer p {
@@ -1840,23 +1856,39 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 /* ----- บ๊วย (อันดับสุดท้าย) ----- */
+/* บ๊วย — ไม่มีกรอบ/พื้นล้อม ไม่ใช่ส่วนหนึ่งของตาราง แค่ลอยอยู่ใต้ตาราง จัดกึ่งกลางทั้งหมด */
 .standings-lastplace {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border-top: 1px solid var(--border);
-  background: var(--surface-2);
+  text-align: center;
+  gap: 4px;
+  margin-top: 22px;
+  padding: 0;
+}
+
+.standings-lastplace-label {
+  font-size: 22px;
+  color: var(--status-orange);
+  font-weight: 800;
+  font-family: var(--font-heading);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.standings-lastplace-avatar-wrap {
+  position: relative;
+  margin-top: 6px;
 }
 
 .standings-lastplace-avatar {
-  width: 44px;
-  height: 44px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--status-orange);
   background: var(--surface);
-  flex-shrink: 0;
+  filter: grayscale(0.35);
 }
 
 .standings-lastplace-avatar.standings-avatar-fallback {
@@ -1864,29 +1896,45 @@ button.btn-ghost:hover:not(:disabled) {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 16px;
+  font-size: 20px;
   color: var(--text-muted);
 }
 
-.standings-lastplace-label {
-  font-size: 11px;
-  color: var(--status-orange);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin: 0;
+.standings-lastplace-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  font-size: 20px;
+  animation: standings-lastplace-wobble 1500ms ease-in-out infinite;
+}
+
+@keyframes standings-lastplace-wobble {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(8deg);
+  }
 }
 
 .standings-lastplace-name {
   font-weight: 700;
+  font-size: 14px;
   color: var(--text);
-  margin: 2px 0 0;
+  margin: 6px 0 0;
 }
 
 .standings-lastplace-cheer {
   font-size: 12px;
   color: var(--text-muted);
   margin: 2px 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .standings-lastplace-badge {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
