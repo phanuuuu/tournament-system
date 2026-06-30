@@ -1,0 +1,9 @@
+{
+  "name": "tournament-testkit",
+  "private": true,
+  "type": "module",
+  "description": "Local emulator seed/verify scripts — never deployed, never touches production",
+  "dependencies": {
+    "firebase-admin": "^13.10.0"
+  }
+}

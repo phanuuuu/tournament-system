@@ -10,6 +10,7 @@ import {
   adminOverrideResult,
 } from "../firebase/matches";
 import { subscribeToLeague } from "../firebase/leagues";
+import { subscribeToByeBans } from "../firebase/byeBans";
 import { submitMatchResult } from "../firebase/matchSubmission";
 import { uploadMatchPhoto } from "../firebase/storageHelpers";
 import { usePublicProfiles } from "../hooks/usePublicProfiles";
@@ -39,6 +40,7 @@ export default function MatchPage() {
   const [match, setMatch] = useState(undefined);
   const [league, setLeague] = useState(undefined);
   const [leagueMatches, setLeagueMatches] = useState([]);
+  const [byeBans, setByeBans] = useState({});
   const [myScore, setMyScore] = useState("");
   const [oppScore, setOppScore] = useState("");
   const [usePenalty, setUsePenalty] = useState(false);
@@ -63,6 +65,10 @@ export default function MatchPage() {
   // ใช้ดูสถิติเจอกัน (head-to-head) เท่านั้น — ใช้ subscription ที่มีอยู่แล้ว ไม่สร้าง query ใหม่
   useEffect(() => {
     if (match?.leagueId) return subscribeToLeagueMatches(match.leagueId, setLeagueMatches);
+  }, [match?.leagueId]);
+  // ป้ายแพ้บายของลีค (ใช้ subscription เดิม) — ไว้ล็อก/แสดงสถานะแมตช์ของผู้เล่นที่ถูกแพ้บาย
+  useEffect(() => {
+    if (match?.leagueId) return subscribeToByeBans(match.leagueId, setByeBans);
   }, [match?.leagueId]);
 
   const profiles = usePublicProfiles(match ? [match.players.home, match.players.away] : []);
@@ -194,7 +200,9 @@ export default function MatchPage() {
     }
     let pH = null;
     let pA = null;
-    if (sH === sA) {
+    // จุดโทษบังคับเฉพาะลีคที่ต้องมีผู้ชนะ (บอลถ้วย/แมตช์ตัดสิน) เท่านั้น
+    // ลีคเก็บแต้มเสมอได้ตามปกติ ไม่ต้องกรอกจุดโทษ (ตรงกับ logic ฝั่งผู้เล่นใน handleSubmit)
+    if (needsPenalty && sH === sA) {
       pH = Number(overridePenHome);
       pA = Number(overridePenAway);
       if (!Number.isInteger(pH) || pH < 0 || !Number.isInteger(pA) || pA < 0) {
@@ -269,7 +277,13 @@ export default function MatchPage() {
   const myName = profile?.displayName ?? "ฉัน";
   const mySubmission = match.submissions?.[user.uid];
   const opponentSubmission = opponentUid ? match.submissions?.[opponentUid] : null;
-  const editable = isParticipant && match.status !== "approved" && match.status !== "walkover";
+  // แพ้บาย (byeBan) — override ที่ "มองทะลุ" คิดเป็นแพ้ 0-3 ตอนคำนวณ ไม่แตะ match doc เลย
+  // ล็อก/แสดงสถานะแพ้บาย เฉพาะแมตช์ที่ "ยังไม่มีผลแข่งจริง" (ผลที่อนุมัติ/ชนะบายไปแล้วโชว์ผลจริงตามเดิม)
+  const homeBanned = !!byeBans[match.players.home]?.active;
+  const awayBanned = !!byeBans[match.players.away]?.active;
+  const isSettledReal = match.status === "approved" || match.status === "walkover";
+  const byeLocked = (homeBanned || awayBanned) && !isSettledReal;
+  const editable = isParticipant && !isSettledReal && !byeLocked;
   const canUseContactButton = league?.format === "cup" && match.kind === "regular" && isParticipant;
   const iAmUnreachableFlag = !!match.contactUnreachable?.[user.uid];
   const isAdmin = profile?.role === "admin";
@@ -311,7 +325,7 @@ export default function MatchPage() {
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </button>
           </span>
-          <StatusBadge status={match.status} />
+          {byeLocked ? <span className="status-badge status-orange">แพ้บาย (จบแล้ว)</span> : <StatusBadge status={match.status} />}
         </div>
         <p>
           {league?.name}
@@ -384,11 +398,19 @@ export default function MatchPage() {
         </div>
       )}
 
-      {match.status === "disputed" && (
+      {match.status === "disputed" && !byeLocked && (
         <div className="match-result-banner status-orange match-disputed-banner">สกอร์ที่ส่งมาไม่ตรงกัน รอแอดมินตรวจสอบและตัดสินผล</div>
       )}
 
-      {isAdmin && match.status === "one_submitted" && (
+      {byeLocked && (
+        <div className="match-result-banner status-orange">
+          {homeBanned && awayBanned
+            ? "ทั้งสองฝ่ายถูกปรับแพ้บาย — แมตช์นี้จบแล้ว ไม่นับผล"
+            : `แพ้บาย: ${profiles[homeBanned ? match.players.home : match.players.away]?.displayName ?? "ผู้เล่น"} ถูกปรับแพ้ 0-3 (ระบบปรับให้ ไม่ใช่ผลแข่งจริง) — แมตช์นี้จบแล้ว`}
+        </div>
+      )}
+
+      {isAdmin && !byeLocked && match.status === "one_submitted" && (
         <p className="status-badge status-yellow match-hint">
           {homeSubmission ? profiles[match.players.home]?.displayName : profiles[match.players.away]?.displayName}
           {" "}ส่งผลแล้ว รออีกฝั่งส่งอยู่ — ถ้ารอนานเกินไป ตัดสินผลแทนได้ที่ฟอร์มด้านล่าง
@@ -500,7 +522,13 @@ export default function MatchPage() {
         </form>
       )}
 
-      {isAdmin && (
+      {isAdmin && byeLocked && (
+        <p className="hint-text match-hint">
+          ผู้เล่นถูกปรับแพ้บายอยู่ — แมตช์นี้ถูกล็อก หากต้องการบันทึกผลแข่งจริง ให้เลิกแพ้บายในหน้าจัดการลีคก่อน
+        </p>
+      )}
+
+      {isAdmin && !byeLocked && (
         <form onSubmit={handleAdminOverride}>
           <h2>{match.status === "approved" || match.status === "walkover" ? "แก้ไขผลโดยตรง (แอดมิน)" : "ตัดสินผลแมตช์นี้ (แอดมิน)"}</h2>
           {match.status !== "approved" && match.status !== "walkover" && (
@@ -519,12 +547,16 @@ export default function MatchPage() {
               onChange={setOverrideAway}
             />
           </div>
-          <p className="hint-text">กรอกจุดโทษด้านล่างด้วย ถ้าสกอร์เสมอ</p>
-          <div className="score-stepper-row">
-            <ScoreStepper label="จุดโทษเหย้า" value={overridePenHome} onChange={setOverridePenHome} />
-            <span className="score-stepper-divider">:</span>
-            <ScoreStepper label="จุดโทษเยือน" value={overridePenAway} onChange={setOverridePenAway} />
-          </div>
+          {needsPenalty && (
+            <>
+              <p className="hint-text">กรอกจุดโทษด้านล่างด้วย ถ้าสกอร์เสมอ</p>
+              <div className="score-stepper-row">
+                <ScoreStepper label="จุดโทษเหย้า" value={overridePenHome} onChange={setOverridePenHome} />
+                <span className="score-stepper-divider">:</span>
+                <ScoreStepper label="จุดโทษเยือน" value={overridePenAway} onChange={setOverridePenAway} />
+              </div>
+            </>
+          )}
           <button type="submit" className="btn-ghost">
             บันทึกผล
           </button>

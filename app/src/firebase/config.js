@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
@@ -19,3 +19,10 @@ export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app, "asia-southeast1");
+
+// เชื่อม Firestore/Auth emulator เฉพาะตอนทดสอบ (ตั้ง VITE_USE_EMULATOR=true ใน .env)
+// โปรดักชันไม่เคยเซ็ตตัวแปรนี้ บล็อกนี้จึงไม่ทำงานเลยและไม่กระทบของจริง
+if (import.meta.env.VITE_USE_EMULATOR === "true") {
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+}
