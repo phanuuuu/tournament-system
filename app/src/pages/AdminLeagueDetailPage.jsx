@@ -4,6 +4,8 @@ import {
   subscribeToLeague,
   startLeague,
   deleteLeague,
+  finishLeague,
+  reopenLeague,
   kickPlayer,
   canStartLeague,
   canDeleteLeague,
@@ -60,6 +62,32 @@ export default function AdminLeagueDetailPage() {
       navigate("/admin/leagues", { replace: true });
     } catch (err) {
       setError(err.message);
+      setBusy(false);
+    }
+  }
+
+  async function handleFinish() {
+    if (!window.confirm("ปิดลีคนี้เป็น \"จบแล้ว\"? (เปิดกลับมาแข่งต่อได้ภายหลัง)")) return;
+    setError("");
+    setBusy(true);
+    try {
+      await finishLeague(leagueId);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReopen() {
+    if (!window.confirm("เปิดลีคนี้กลับเป็น \"กำลังแข่ง\" อีกครั้ง?")) return;
+    setError("");
+    setBusy(true);
+    try {
+      await reopenLeague(leagueId);
+    } catch (err) {
+      setError(err.message);
+    } finally {
       setBusy(false);
     }
   }
@@ -191,6 +219,16 @@ export default function AdminLeagueDetailPage() {
         {league.format === "cup" && league.status === "ongoing" && league.currentRound > 1 && (
           <button type="button" className="btn-ghost" disabled={busy} onClick={handleRevert}>
             {busy && <Spinner size="sm" />} ย้อนรอบล่าสุด
+          </button>
+        )}
+        {league.format === "points" && league.status === "ongoing" && (
+          <button type="button" className="btn-ghost" disabled={busy} onClick={handleFinish}>
+            {busy && <Spinner size="sm" />} ปิดลีค (จบ)
+          </button>
+        )}
+        {league.status === "finished" && (
+          <button type="button" className="btn-ghost" disabled={busy} onClick={handleReopen}>
+            {busy && <Spinner size="sm" />} เปิดลีคอีกครั้ง
           </button>
         )}
         {canDeleteLeague(league) && (

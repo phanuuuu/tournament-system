@@ -112,3 +112,19 @@ export async function startLeague(league) {
 export async function deleteLeague(leagueId) {
   await deleteDoc(doc(db, "leagues", leagueId));
 }
+
+// ปิดลีคด้วยมือ (แอดมิน) — ใช้เผื่อกรณีที่ auto-finish ไม่ครอบคลุม หรือลีคเก็บแต้มเก่าที่ค้างอยู่
+export async function finishLeague(leagueId) {
+  await updateDoc(doc(db, "leagues", leagueId), {
+    status: "finished",
+    finishedAt: serverTimestamp(),
+  });
+}
+
+// เปิดลีคที่จบแล้วกลับมาแข่งต่อ (แอดมิน) — กันการกดปิดผิดลีค
+export async function reopenLeague(leagueId) {
+  await updateDoc(doc(db, "leagues", leagueId), {
+    status: "ongoing",
+    finishedAt: null,
+  });
+}

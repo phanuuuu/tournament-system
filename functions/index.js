@@ -1,7 +1,9 @@
 const { setGlobalOptions } = require("firebase-functions/v2");
-const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require("firebase-functions/v2/firestore");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
+const { FieldValue } = require("firebase-admin/firestore");
+const { isPointsLeagueComplete } = require("./leagueComplete");
 
 admin.initializeApp();
 setGlobalOptions({ region: "asia-southeast1" });
@@ -173,6 +175,44 @@ exports.onMatchApproved = onDocumentUpdated("matches/{matchId}", async (event) =
   }
   batch.update(leagueRef, { currentRound: round + 1 });
   await batch.commit();
+});
+
+// ปิดลีคเก็บแต้มอัตโนมัติเมื่อทุกแมตช์จบครบ (รวมนัดที่แพ้บาย) — ปิดทางเดียว ไม่ auto-reopen
+// (ตอนเลิกแพ้บายจะไม่เด้งกลับเอง แอดมินกดเปิดใหม่เองได้)
+async function maybeFinishPointsLeague(leagueId) {
+  const leagueRef = db.doc(`leagues/${leagueId}`);
+  const leagueSnap = await leagueRef.get();
+  if (!leagueSnap.exists) return;
+  const league = leagueSnap.data();
+  if (league.format !== "points" || league.status !== "ongoing") return;
+
+  const [matchesSnap, byeSnap] = await Promise.all([
+    db.collection("matches").where("leagueId", "==", leagueId).get(),
+    db.collection("leagues").doc(leagueId).collection("byeBans").get(),
+  ]);
+  const matches = matchesSnap.docs.map((d) => d.data());
+  const byeBans = {};
+  byeSnap.docs.forEach((d) => {
+    byeBans[d.id] = d.data();
+  });
+
+  if (!isPointsLeagueComplete(matches, byeBans)) return;
+  await leagueRef.update({
+    status: "finished",
+    finishedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+// แมตช์ลีคเก็บแต้มถูกตัดสิน (นัดปกติหรือนัดตัดสิน) → เช็คว่าครบยัง (no-op ถ้าไม่ใช่ลีคเก็บแต้ม)
+exports.onPointsMatchSettled = onDocumentUpdated("matches/{matchId}", async (event) => {
+  const after = event.data.after.data();
+  if (after.status !== "approved" && after.status !== "walkover") return;
+  await maybeFinishPointsLeague(after.leagueId);
+});
+
+// แพ้บายถูกเปลี่ยน → อาจทำให้ฤดูกาลครบ (แบนคนสุดท้าย) ทั้งที่ไม่มี match doc อัปเดต ฟังก์ชันด้านบนเลยไม่ยิง
+exports.onByeBanWrite = onDocumentWritten("leagues/{leagueId}/byeBans/{uid}", async (event) => {
+  await maybeFinishPointsLeague(event.params.leagueId);
 });
 
 async function getAdminUid() {
