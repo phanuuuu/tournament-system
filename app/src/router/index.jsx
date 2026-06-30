@@ -22,6 +22,7 @@ const AdminCreateLeaguePage = lazy(() => import("../pages/AdminCreateLeaguePage"
 const AdminLeagueDetailPage = lazy(() => import("../pages/AdminLeagueDetailPage"));
 const AdminDisputesPage = lazy(() => import("../pages/AdminDisputesPage"));
 const AdminStaleMatchesPage = lazy(() => import("../pages/AdminStaleMatchesPage"));
+const AdminOneSubmittedPage = lazy(() => import("../pages/AdminOneSubmittedPage"));
 
 function PageLoader() {
   return (
@@ -78,6 +79,7 @@ export default function AppRouter() {
                 <Route path="/admin/leagues/:leagueId" element={<AdminLeagueDetailPage />} />
                 <Route path="/admin/disputes" element={<AdminDisputesPage />} />
                 <Route path="/admin/stale-matches" element={<AdminStaleMatchesPage />} />
+                <Route path="/admin/one-submitted" element={<AdminOneSubmittedPage />} />
               </Route>
             </Route>
           </Route>

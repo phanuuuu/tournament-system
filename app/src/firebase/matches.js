@@ -189,6 +189,14 @@ export function subscribeToScheduledMatches(callback) {
   });
 }
 
+// แมตช์ที่มีฝ่ายเดียวส่งผลแล้ว — รออีกฝ่ายยืนยัน แอดมินเข้าไปตัดสินได้เลย
+export function subscribeToOneSubmittedMatches(callback) {
+  const q = query(collection(db, "matches"), where("status", "==", "one_submitted"));
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+}
+
 // แอดมินยืนยันว่าฝ่ายที่กด "ติดต่อไม่ได้" ผ่านเข้ารอบแบบชนะบาย (ไม่ใช่สกอร์จริง)
 export async function grantWalkover(matchId, winnerUid) {
   await updateDoc(doc(db, "matches", matchId), {

@@ -2977,6 +2977,33 @@ button.btn-ghost:hover:not(:disabled) {
 }
 
 /* ===== Admin dashboard ===== */
+.admin-dashboard-header {
+  margin-bottom: 4px;
+}
+
+.admin-dashboard-header h1 {
+  margin-bottom: 2px;
+}
+
+.dashboard-greeting {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.dashboard-section {
+  margin-top: 24px;
+}
+
+.dashboard-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 0 0 8px 2px;
+}
+
 .dashboard-card {
   display: flex;
   justify-content: space-between;
@@ -2984,14 +3011,14 @@ button.btn-ghost:hover:not(:disabled) {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  margin-top: 12px;
+  margin-top: 10px;
   text-decoration: none;
   color: var(--text);
   font-weight: 700;
   background: var(--surface-solid);
   box-shadow: var(--glow-sm);
   transition: transform var(--transition-fast), box-shadow var(--transition-theme),
-    border-color var(--transition-theme);
+    border-color var(--transition-theme), background var(--transition-theme);
 }
 
 .dashboard-card:hover {
@@ -3004,11 +3031,162 @@ button.btn-ghost:hover:not(:disabled) {
   transform: translateY(0) scale(0.99);
 }
 
+/* card with icon-body-right row layout */
+.dashboard-card-row {
+  gap: 14px;
+}
+
+.dashboard-card-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.dashboard-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dashboard-card-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dashboard-card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dashboard-card-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+/* alert variant — ต้องลงมือ (ข้อพิพาท) */
+.dashboard-card-alert {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-solid));
+  box-shadow: var(--glow-danger);
+}
+
+.dashboard-card-alert .dashboard-card-icon {
+  color: var(--danger);
+}
+
+.dashboard-card-alert:hover {
+  border-color: var(--danger);
+  box-shadow: var(--glow-danger), var(--glow-md);
+}
+
+/* warn variant — ส่งผลแล้วฝ่ายเดียว */
+.dashboard-card-warn {
+  border-color: var(--status-orange);
+  background: color-mix(in srgb, var(--status-orange) 7%, var(--surface-solid));
+}
+
+.dashboard-card-warn .dashboard-card-icon {
+  color: var(--status-orange);
+}
+
+.dashboard-card-warn:hover {
+  border-color: var(--status-orange);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--status-orange) 35%, transparent);
+}
+
 .dashboard-number {
   font-size: 24px;
   font-family: var(--font-heading);
 }
 
+.dashboard-number-warn {
+  color: var(--status-orange);
+}
+
+/* stat grid — 2 คอลัมน์ */
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.dashboard-stat-card {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 16px 14px;
+  position: relative;
+}
+
+.dashboard-stat-icon {
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.dashboard-stat-number {
+  font-size: 36px;
+  font-family: var(--font-heading);
+  line-height: 1;
+  color: var(--text);
+}
+
+.dashboard-stat-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dashboard-stat-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.dashboard-stat-chevron {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* chips */
+.dashboard-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.dashboard-chip-danger {
+  background: var(--danger-tint);
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+}
+
+.dashboard-chip-accent {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* alert badge */
 .alert-badge {
   display: inline-flex;
   align-items: center;
@@ -3045,22 +3223,66 @@ button.btn-ghost:hover:not(:disabled) {
   }
 }
 
-.dashboard-subitems {
+/* quick action buttons */
+.admin-quick-actions {
   display: flex;
-  flex-direction: column;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.admin-action-btn {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
-  margin: 10px 0 0 4px;
+  margin-top: 0;
+}
+
+/* one-submitted list page */
+.one-submitted-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text);
+  width: 100%;
+}
+
+.one-submitted-players {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.one-submitted-player {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 14px;
+  font-weight: 600;
 }
 
-.dashboard-subitems a {
+.one-submitted-done {
+  color: var(--color-success);
+}
+
+.one-submitted-waiting {
   color: var(--text-muted);
 }
 
-.dashboard-breakdown {
+.one-submitted-vs {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.one-submitted-code {
+  flex-shrink: 0;
   font-size: 13px;
-  color: var(--text-muted);
-  margin: 6px 0 0 4px;
 }
 
 /* ===== Notification bell ===== */
